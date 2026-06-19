@@ -1,0 +1,1011 @@
+
+const API_BASE = window.location.port === "8080" ? "" : "http://localhost:8080";
+
+async function initDatabase() {
+  try {
+    const res = await fetch(`${API_BASE}/api/bootstrap`);
+    if (!res.ok) {
+      throw new Error(`API returned ${res.status}`);
+    }
+
+    const db = await res.json();
+    localStorage.setItem("DanhMuc", JSON.stringify(db.DanhMuc || []));
+    localStorage.setItem("NhanVien", JSON.stringify(db.NhanVien || []));
+    localStorage.setItem("SanPham", JSON.stringify(db.SanPham || []));
+    localStorage.setItem("TheThanhVien", JSON.stringify(db.TheThanhVien || null));
+    localStorage.setItem("KhachHang", JSON.stringify(db.KhachHang || null));
+    localStorage.setItem("LichSuDiem", JSON.stringify(db.LichSuDiem || []));
+  } catch (err) {
+    console.error("Cannot load database from Java backend.", err);
+
+    if (!localStorage.getItem("SanPham")) {
+      localStorage.setItem("SanPham", JSON.stringify([]));
+    }
+    if (!localStorage.getItem("DanhMuc")) {
+      localStorage.setItem("DanhMuc", JSON.stringify([]));
+    }
+    if (!localStorage.getItem("NhanVien")) {
+      localStorage.setItem("NhanVien", JSON.stringify([]));
+    }
+    if (!localStorage.getItem("TheThanhVien")) {
+      localStorage.setItem("TheThanhVien", JSON.stringify(null));
+    }
+    if (!localStorage.getItem("KhachHang")) {
+      localStorage.setItem("KhachHang", JSON.stringify(null));
+    }
+    if (!localStorage.getItem("LichSuDiem")) {
+      localStorage.setItem("LichSuDiem", JSON.stringify([]));
+    }
+  }
+
+  if (!localStorage.getItem("GioHang")) {
+    localStorage.setItem("GioHang", JSON.stringify({ cartID: 1, totalAmount: 0, customerID: 1 }));
+  }
+  if (!localStorage.getItem("ChiTietGioHang")) {
+    localStorage.setItem("ChiTietGioHang", JSON.stringify([]));
+  }
+  if (!localStorage.getItem("DonHang")) {
+    localStorage.setItem("DonHang", JSON.stringify([]));
+  }
+  if (!localStorage.getItem("ThanhToan")) {
+    localStorage.setItem("ThanhToan", JSON.stringify([]));
+  }
+  if (!localStorage.getItem("ChiTietDonHang")) {
+    localStorage.setItem("ChiTietDonHang", JSON.stringify([]));
+  }
+}
+
+function getProducts() {
+  return JSON.parse(localStorage.getItem("SanPham") || "[]");
+}
+
+function getCategories() {
+  return JSON.parse(localStorage.getItem("DanhMuc") || "[]");
+}
+
+function getCartItems() {
+  return JSON.parse(localStorage.getItem("ChiTietGioHang") || "[]");
+}
+
+function saveCartItems(items) {
+  localStorage.setItem("ChiTietGioHang", JSON.stringify(items));
+  updateCartBadge();
+  recalculateCartTotal();
+}
+
+function updateCartBadge() {
+  const items = getCartItems();
+  const totalQty = items.reduce((sum, item) => sum + item.quantityProduct, 0);
+  const badge = document.getElementById("cart-badge");
+  if (badge) {
+    badge.innerText = totalQty;
+  }
+}
+
+function recalculateCartTotal() {
+  const items = getCartItems();
+  const subtotal = items.reduce((sum, item) => sum + (item.subTotal || 0), 0);
+  const gioHang = JSON.parse(localStorage.getItem("GioHang")) || { cartID: 1, customerID: 1 };
+  
+  let discount = 0;
+  if (sessionStorage.getItem("activeCoupon") === "GIAM50") {
+    discount = 50000;
+  }
+
+  const shipping = parseInt(sessionStorage.getItem("shippingFee") || "0");
+  const finalTotal = Math.max(0, subtotal - discount + shipping);
+
+  gioHang.totalAmount = finalTotal;
+  localStorage.setItem("GioHang", JSON.stringify(gioHang));
+}
+
+function showToast(message) {
+  let toast = document.getElementById("toast-notice");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast-notice";
+    toast.className = "toast";
+    toast.innerHTML = `
+      <svg class="toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span id="toast-message"></span>
+    `;
+    document.body.appendChild(toast);
+  }
+  document.getElementById("toast-message").innerText = message;
+  toast.classList.add("active");
+  setTimeout(() => {
+    toast.classList.remove("active");
+  }, 3000);
+}
+
+function addToCart(productId, quantity = 1) {
+  const products = getProducts();
+  const product = products.find(p => p.productID === productId);
+  if (!product) return;
+
+  let cartItems = getCartItems();
+  const existingItemIndex = cartItems.findIndex(item => item.productID === productId);
+
+  if (existingItemIndex > -1) {
+    cartItems[existingItemIndex].quantityProduct += quantity;
+    cartItems[existingItemIndex].subTotal = cartItems[existingItemIndex].quantityProduct * product.priceProduct;
+  } else {
+    cartItems.push({
+      cartID: 1,
+      productID: productId,
+      quantityProduct: quantity,
+      subTotal: quantity * product.priceProduct
+    });
+  }
+
+  saveCartItems(cartItems);
+  showToast("Đã thêm vào giỏ hàng!");
+}
+
+function formatPrice(number) {
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(number);
+}
+
+function initCountdown() {
+  const hrBox = document.getElementById("cd-h");
+  const minBox = document.getElementById("cd-m");
+  const secBox = document.getElementById("cd-s");
+  
+  if (!hrBox || !minBox || !secBox) return;
+
+  let totalSeconds = 4 * 3600 + 15 * 60 + 30;
+
+  const interval = setInterval(() => {
+    if (totalSeconds <= 0) {
+      clearInterval(interval);
+      return;
+    }
+    totalSeconds--;
+    
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+
+    hrBox.innerText = String(h).padStart(2, "0");
+    minBox.innerText = String(m).padStart(2, "0");
+    secBox.innerText = String(s).padStart(2, "0");
+  }, 1000);
+}
+
+function renderFlashSale() {
+  const grid = document.getElementById("flash-sale-grid");
+  if (!grid) return;
+
+  const products = getProducts().filter(p => p.isFlashSale);
+  grid.innerHTML = products.map(p => {
+    const percent = Math.round((p.soldFlash / p.limitFlash) * 100);
+    return `
+      <div class="product-card">
+        <span class="product-badge-flash">FLASH SALE</span>
+        <span class="product-installment">Trả góp 0%</span>
+        <div class="product-img-wrapper">
+          <div class="placeholder-img"></div>
+        </div>
+        <div class="product-info">
+          <div class="product-brand">${p.brand}</div>
+          <a href="product-detail.html?id=${p.productID}" class="product-name">${p.productName}</a>
+          <div class="product-rating">
+            ★★★★★ <span>(${p.reviewsCount})</span>
+          </div>
+          <div class="product-price-wrapper">
+            <span class="product-price-sale">${formatPrice(p.priceProduct)}</span>
+            <span class="product-price-original">${formatPrice(p.originalPrice)}</span>
+          </div>
+          <div class="product-sold-progress">
+            <div class="product-sold-bar" style="width: ${percent}%"></div>
+            <span class="product-sold-text">Đã bán ${p.soldFlash}/${p.limitFlash}</span>
+          </div>
+          <div class="product-delivery-tag">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+            Giao nhanh 2h
+          </div>
+          <button class="product-btn-add" onclick="addToCart('${p.productID}')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            Thêm vào giỏ
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderSuggestedProducts() {
+  const grid = document.getElementById("suggested-grid");
+  if (!grid) return;
+
+  const products = getProducts().filter(p => !p.isFlashSale);
+  grid.innerHTML = products.map(p => {
+    return `
+      <div class="product-card">
+        <span class="product-badge-discount">-${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%</span>
+        <span class="product-installment">Trả góp 0%</span>
+        <div class="product-img-wrapper">
+          <div class="placeholder-img"></div>
+        </div>
+        <div class="product-info">
+          <div class="product-brand">${p.brand}</div>
+          <a href="product-detail.html?id=${p.productID}" class="product-name">${p.productName}</a>
+          <div class="product-rating">
+            ★★★★★ <span>(${p.reviewsCount})</span>
+          </div>
+          <div class="product-price-wrapper">
+            <span class="product-price-sale">${formatPrice(p.priceProduct)}</span>
+            <span class="product-price-original">${formatPrice(p.originalPrice)}</span>
+          </div>
+          <div class="product-delivery-tag">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+            Miễn phí vận chuyển
+          </div>
+          <button class="product-btn-add" onclick="addToCart('${p.productID}')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            Thêm vào giỏ
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function handleSearch(event) {
+  event.preventDefault();
+  const input = document.getElementById("search-input");
+  if (!input) return;
+  const query = input.value.trim();
+  if (query) {
+    window.location.href = `product-list.html?search=${encodeURIComponent(query)}`;
+  }
+}
+
+function runFilters() {
+  const products = getProducts();
+  let filtered = [...products];
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const searchQ = searchParams.get("search");
+  if (searchQ) {
+    filtered = filtered.filter(p => p.productName.toLowerCase().includes(searchQ.toLowerCase()));
+  }
+
+  const categoryQ = searchParams.get("category");
+  if (categoryQ) {
+    filtered = filtered.filter(p => p.categoryID === categoryQ);
+  }
+
+  const priceFilters = Array.from(document.querySelectorAll(".price-filter:checked")).map(el => el.value);
+  if (priceFilters.length > 0) {
+    filtered = filtered.filter(p => {
+      return priceFilters.some(val => {
+        if (val === "under5") return p.priceProduct < 5000000;
+        if (val === "5to10") return p.priceProduct >= 5000000 && p.priceProduct <= 10000000;
+        if (val === "over10") return p.priceProduct > 10000000;
+        return true;
+      });
+    });
+  }
+
+  const brandFilters = Array.from(document.querySelectorAll(".brand-filter:checked")).map(el => el.value);
+  if (brandFilters.length > 0) {
+    filtered = filtered.filter(p => brandFilters.includes(p.brand.toLowerCase()));
+  }
+
+  const ratingFilters = Array.from(document.querySelectorAll(".rating-filter:checked")).map(el => parseFloat(el.value));
+  if (ratingFilters.length > 0) {
+    filtered = filtered.filter(p => {
+      const minRating = Math.min(...ratingFilters);
+      return p.rating >= minRating;
+    });
+  }
+
+  const capacityFilters = Array.from(document.querySelectorAll(".capacity-filter:checked")).map(el => el.value);
+  if (capacityFilters.length > 0) {
+    filtered = filtered.filter(p => {
+      return capacityFilters.some(cap => p.capacity.toLowerCase().includes(cap));
+    });
+  }
+
+  const energyFilters = Array.from(document.querySelectorAll(".energy-filter:checked")).map(el => el.value);
+  if (energyFilters.length > 0) {
+    filtered = filtered.filter(p => energyFilters.includes(p.energySaving));
+  }
+
+  const smartFilters = Array.from(document.querySelectorAll(".smart-filter:checked")).map(el => el.value);
+  if (smartFilters.length > 0) {
+    filtered = filtered.filter(p => smartFilters.includes(p.smartFeature));
+  }
+
+  const sortVal = document.getElementById("sort-select")?.value || "default";
+  if (sortVal === "priceAsc") {
+    filtered.sort((a, b) => a.priceProduct - b.priceProduct);
+  } else if (sortVal === "priceDesc") {
+    filtered.sort((a, b) => b.priceProduct - a.priceProduct);
+  } else if (sortVal === "rating") {
+    filtered.sort((a, b) => b.rating - a.rating);
+  }
+
+  renderListingGrid(filtered);
+}
+
+function renderListingGrid(products) {
+  const countEl = document.getElementById("product-count");
+  if (countEl) {
+    countEl.innerText = `${products.length} sản phẩm`;
+  }
+
+  const grid = document.getElementById("listing-grid");
+  if (!grid) return;
+
+  if (products.length === 0) {
+    grid.innerHTML = `<div style="grid-column: span 3; text-align: center; padding: 48px; color: var(--gray); font-weight: 700;">Không tìm thấy sản phẩm nào khớp với bộ lọc!</div>`;
+    return;
+  }
+
+  grid.innerHTML = products.map(p => {
+    return `
+      <div class="product-card">
+        <span class="product-badge-discount">-${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%</span>
+        <span class="product-installment">Trả góp 0%</span>
+        <div class="product-img-wrapper">
+          <div class="placeholder-img"></div>
+        </div>
+        <div class="product-info">
+          <div class="product-brand">${p.brand}</div>
+          <a href="product-detail.html?id=${p.productID}" class="product-name">${p.productName}</a>
+          <div class="product-rating">
+            ★★★★★ <span>(${p.reviewsCount})</span>
+          </div>
+          <div class="product-price-wrapper">
+            <span class="product-price-sale">${formatPrice(p.priceProduct)}</span>
+            <span class="product-price-original">${formatPrice(p.originalPrice)}</span>
+          </div>
+          <div class="product-delivery-tag">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+            Giao siêu tốc
+          </div>
+          <button class="product-btn-add" onclick="addToCart('${p.productID}')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            Thêm vào giỏ
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function initListingPage() {
+  const listingGrid = document.getElementById("listing-grid");
+  if (!listingGrid) return;
+
+  const checkboxes = document.querySelectorAll(".sidebar input[type='checkbox']");
+  checkboxes.forEach(chk => {
+    chk.addEventListener("change", runFilters);
+  });
+
+  const sortSel = document.getElementById("sort-select");
+  if (sortSel) {
+    sortSel.addEventListener("change", runFilters);
+  }
+
+  runFilters();
+}
+
+function initDetailPage() {
+  const detailMain = document.querySelector(".detail-main");
+  if (!detailMain) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const productId = params.get("id") || "SP_MG_01";
+  const products = getProducts();
+  const p = products.find(prod => prod.productID === productId);
+
+  if (!p) {
+    detailMain.innerHTML = `<div style="text-align: center; padding: 48px; color: var(--gray); font-weight: 700;">Không tìm thấy sản phẩm yêu cầu!</div>`;
+    return;
+  }
+
+  const brandEl = document.getElementById("dp-brand");
+  const nameEl = document.getElementById("dp-name");
+  const ratingEl = document.getElementById("dp-rating-num");
+  const reviewsEl = document.getElementById("dp-reviews-count");
+  const soldEl = document.getElementById("dp-sold-count");
+  const saleEl = document.getElementById("dp-price-sale");
+  const origEl = document.getElementById("dp-price-original");
+  const badgeEl = document.getElementById("dp-price-badge");
+  const btnCart = document.getElementById("dp-btn-cart");
+  const btnBuy = document.getElementById("dp-btn-buy");
+
+  if (brandEl) brandEl.innerText = p.brand;
+  if (nameEl) nameEl.innerText = p.productName;
+  if (ratingEl) ratingEl.innerText = p.rating;
+  if (reviewsEl) reviewsEl.innerText = `${p.reviewsCount} Đánh giá`;
+  if (soldEl) soldEl.innerText = `${p.soldCount} Đã bán`;
+  if (saleEl) saleEl.innerText = formatPrice(p.priceProduct);
+  if (origEl) origEl.innerText = formatPrice(p.originalPrice);
+  if (badgeEl) badgeEl.innerText = `Giảm -${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%`;
+
+  if (btnCart) {
+    btnCart.onclick = () => addToCart(p.productID, 1);
+  }
+  if (btnBuy) {
+    btnBuy.onclick = () => {
+      addToCart(p.productID, 1);
+      setTimeout(() => {
+        window.location.href = "cart.html";
+      }, 500);
+    };
+  }
+
+  const specsTable = document.getElementById("dp-specs-table");
+  if (specsTable) {
+    specsTable.innerHTML = `
+      <tr>
+        <td>Thương hiệu</td>
+        <td>${p.brand}</td>
+      </tr>
+      <tr>
+        <td>Mã sản phẩm</td>
+        <td>${p.productID}</td>
+      </tr>
+      <tr>
+        <td>Dung tích/Kích thước</td>
+        <td>${p.capacity}</td>
+      </tr>
+      <tr>
+        <td>Tiết kiệm năng lượng</td>
+        <td>${p.energySaving}</td>
+      </tr>
+      <tr>
+        <td>Tính năng thông minh</td>
+        <td>${p.smartFeature === "Có" ? "Hỗ trợ kết nối WiFi và điều khiển qua ứng dụng" : "Không hỗ trợ"}</td>
+      </tr>
+      <tr>
+        <td>Số lượng tồn kho</td>
+        <td>${p.quantityProduct} chiếc</td>
+      </tr>
+      <tr>
+        <td>Mô tả tóm tắt</td>
+        <td>${p.descriptionProduct}</td>
+      </tr>
+    `;
+  }
+
+  const relatedGrid = document.getElementById("dp-related-grid");
+  if (relatedGrid) {
+    const related = products.filter(item => item.categoryID === p.categoryID && item.productID !== p.productID).slice(0, 4);
+    if (related.length === 0) {
+      relatedGrid.innerHTML = `<div style="grid-column: span 4; text-align: center; color: var(--gray); font-size: 0.9rem;">Không có sản phẩm liên quan tương tự.</div>`;
+    } else {
+      relatedGrid.innerHTML = related.map(item => `
+        <div class="product-card">
+          <span class="product-badge-discount">-${Math.round((1 - item.priceProduct/item.originalPrice)*100)}%</span>
+          <div class="product-img-wrapper">
+            <div class="placeholder-img"></div>
+          </div>
+          <div class="product-info">
+            <div class="product-brand">${item.brand}</div>
+            <a href="product-detail.html?id=${item.productID}" class="product-name">${item.productName}</a>
+            <div class="product-price-wrapper">
+              <span class="product-price-sale">${formatPrice(item.priceProduct)}</span>
+            </div>
+            <button class="product-btn-add" onclick="addToCart('${item.productID}')">Thêm vào giỏ</button>
+          </div>
+        </div>
+      `).join("");
+    }
+  }
+
+  const currentCompare = document.getElementById("dp-compare-current");
+  const alternateCompare = document.getElementById("dp-compare-alternate");
+  if (currentCompare && alternateCompare) {
+    const compProduct = products.find(item => item.categoryID === p.categoryID && item.productID !== p.productID) || products.find(item => item.productID !== p.productID);
+    
+    currentCompare.innerHTML = `
+      <div class="compare-col-header">${p.productName}</div>
+      <div class="compare-price">${formatPrice(p.priceProduct)}</div>
+      <div class="compare-list">
+        <div class="compare-item"><span>Hãng</span><span>${p.brand}</span></div>
+        <div class="compare-item"><span>Dung tích</span><span>${p.capacity}</span></div>
+        <div class="compare-item"><span>Tiết kiệm điện</span><span>${p.energySaving}</span></div>
+        <div class="compare-item"><span>Thông minh</span><span>${p.smartFeature}</span></div>
+        <div class="compare-item"><span>Đánh giá</span><span>${p.rating} ★</span></div>
+      </div>
+    `;
+
+    if (compProduct) {
+      alternateCompare.innerHTML = `
+        <div class="compare-col-header">${compProduct.productName}</div>
+        <div class="compare-price">${formatPrice(compProduct.priceProduct)}</div>
+        <div class="compare-list">
+          <div class="compare-item"><span>Hãng</span><span>${compProduct.brand}</span></div>
+          <div class="compare-item"><span>Dung tích</span><span>${compProduct.capacity}</span></div>
+          <div class="compare-item"><span>Tiết kiệm điện</span><span>${compProduct.energySaving}</span></div>
+          <div class="compare-item"><span>Thông minh</span><span>${compProduct.smartFeature}</span></div>
+          <div class="compare-item"><span>Đánh giá</span><span>${compProduct.rating} ★</span></div>
+        </div>
+      `;
+    }
+  }
+}
+
+function renderCartList() {
+  const items = getCartItems();
+  const products = getProducts();
+  const container = document.getElementById("cart-items-container");
+  if (!container) return;
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 48px; color: var(--gray);">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px; opacity: 0.5;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <p style="font-weight: 700; margin-bottom: 16px;">Giỏ hàng của bạn đang trống!</p>
+        <a href="product-list.html" class="btn btn-blue" style="font-size: 0.85rem;">Mua sắm ngay</a>
+      </div>
+    `;
+    updateCartSummaryDOM(0);
+    return;
+  }
+
+  let html = `
+    <div class="cart-table-header">
+      <div>Sản phẩm</div>
+      <div>Đơn giá</div>
+      <div>Số lượng</div>
+      <div>Thành tiền</div>
+      <div></div>
+    </div>
+  `;
+
+  let subtotal = 0;
+
+  items.forEach(item => {
+    const p = products.find(prod => prod.productID === item.productID);
+    if (!p) return;
+    subtotal += item.subTotal;
+    html += `
+      <div class="cart-item">
+        <div class="cart-product-info">
+          <div class="cart-product-img">
+            <div class="placeholder-img" style="width: 80px; height: 80px; aspect-ratio: 1/1;"></div>
+          </div>
+          <div class="cart-product-detail">
+            <a href="product-detail.html?id=${p.productID}" class="cart-product-name">${p.productName}</a>
+            <span class="cart-product-color">Màu sắc: Tiêu chuẩn | Dung tích: ${p.capacity}</span>
+          </div>
+        </div>
+        <div class="cart-price-box">
+          <span class="cart-price-sale">${formatPrice(p.priceProduct)}</span>
+          <span class="cart-price-original">${formatPrice(p.originalPrice)}</span>
+        </div>
+        <div>
+          <div class="quantity-control">
+            <button class="quantity-btn" onclick="updateQty('${p.productID}', -1)">-</button>
+            <input type="text" class="quantity-input" value="${item.quantityProduct}" readonly>
+            <button class="quantity-btn" onclick="updateQty('${p.productID}', 1)">+</button>
+          </div>
+        </div>
+        <div>
+          <span class="cart-subtotal">${formatPrice(item.subTotal)}</span>
+        </div>
+        <div>
+          <button class="cart-remove-btn" onclick="removeCartItem('${p.productID}')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+  updateCartSummaryDOM(subtotal);
+}
+
+function updateQty(productId, delta) {
+  let items = getCartItems();
+  const idx = items.findIndex(item => item.productID === productId);
+  if (idx === -1) return;
+
+  const products = getProducts();
+  const p = products.find(prod => prod.productID === productId);
+
+  items[idx].quantityProduct += delta;
+  if (items[idx].quantityProduct <= 0) {
+    items.splice(idx, 1);
+  } else {
+    items[idx].subTotal = items[idx].quantityProduct * p.priceProduct;
+  }
+
+  saveCartItems(items);
+  renderCartList();
+}
+
+function removeCartItem(productId) {
+  let items = getCartItems();
+  items = items.filter(item => item.productID !== productId);
+  saveCartItems(items);
+  renderCartList();
+  showToast("Đã xóa sản phẩm khỏi giỏ hàng!");
+}
+
+function updateCartSummaryDOM(subtotal) {
+  const subtotalEl = document.getElementById("summary-subtotal");
+  const discountEl = document.getElementById("summary-discount");
+  const shippingEl = document.getElementById("summary-shipping");
+  const totalEl = document.getElementById("summary-total");
+
+  if (!subtotalEl) return;
+
+  subtotalEl.innerText = formatPrice(subtotal);
+
+  let discount = 0;
+  if (sessionStorage.getItem("activeCoupon") === "GIAM50" && subtotal > 0) {
+    discount = 50000;
+  }
+  discountEl.innerText = discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0);
+
+  const shipping = subtotal > 0 ? 30000 : 0;
+  sessionStorage.setItem("shippingFee", String(shipping));
+  shippingEl.innerText = formatPrice(shipping);
+
+  const finalTotal = Math.max(0, subtotal - discount + shipping);
+  totalEl.innerText = formatPrice(finalTotal);
+
+  recalculateCartTotal();
+}
+
+function applyCoupon() {
+  const input = document.getElementById("coupon-code");
+  if (!input) return;
+
+  const code = input.value.trim().toUpperCase();
+  if (code === "GIAM50") {
+    sessionStorage.setItem("activeCoupon", "GIAM50");
+    showToast("Áp dụng mã giảm giá thành công! Giảm 50.000đ");
+    renderCartList();
+  } else {
+    showToast("Mã giảm giá không hợp lệ hoặc đã hết hạn!");
+  }
+}
+
+function renderCartSuggestions() {
+  const grid = document.getElementById("cart-suggested-grid");
+  if (!grid) return;
+
+  const products = getProducts().slice(4, 8);
+  grid.innerHTML = products.map(p => `
+    <div class="product-card">
+      <div class="product-img-wrapper">
+        <div class="placeholder-img" style="aspect-ratio: 4/3;"></div>
+      </div>
+      <div class="product-info">
+        <a href="product-detail.html?id=${p.productID}" class="product-name" style="height: 38px;">${p.productName}</a>
+        <div class="product-price-wrapper">
+          <span class="product-price-sale">${formatPrice(p.priceProduct)}</span>
+        </div>
+        <button class="product-btn-add" onclick="addToCart('${p.productID}'); setTimeout(renderCartList, 100);">Thêm vào giỏ</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function initCartPage() {
+  renderCartList();
+  renderCartSuggestions();
+
+  const couponBtn = document.getElementById("btn-apply-coupon");
+  if (couponBtn) {
+    couponBtn.onclick = applyCoupon;
+  }
+}
+
+function initCheckoutPage() {
+  const items = getCartItems();
+  const products = getProducts();
+  const summaryList = document.getElementById("checkout-summary-list");
+  if (!summaryList) return;
+
+  if (items.length === 0) {
+    summaryList.innerHTML = `<div style="color: var(--gray); text-align: center; padding: 24px 0;">Giỏ hàng trống!</div>`;
+    return;
+  }
+
+  let subtotal = 0;
+  let html = "";
+
+  items.forEach(item => {
+    const p = products.find(prod => prod.productID === item.productID);
+    if (!p) return;
+    subtotal += item.subTotal;
+    html += `
+      <div class="summary-row" style="font-size: 0.85rem; margin-bottom: 12px; gap: 16px;">
+        <span style="font-weight: 600; text-align: left; flex: 1;">${p.productName} <strong style="color: var(--primary);">x${item.quantityProduct}</strong></span>
+        <span style="font-weight: 700; color: var(--dark); flex-shrink: 0;">${formatPrice(item.subTotal)}</span>
+      </div>
+    `;
+  });
+
+  summaryList.innerHTML = html;
+
+  const subtotalEl = document.getElementById("checkout-subtotal");
+  const discountEl = document.getElementById("checkout-discount");
+  const shippingEl = document.getElementById("checkout-shipping");
+  const totalEl = document.getElementById("checkout-total");
+
+  subtotalEl.innerText = formatPrice(subtotal);
+
+  let discount = 0;
+  if (sessionStorage.getItem("activeCoupon") === "GIAM50") {
+    discount = 50000;
+  }
+  discountEl.innerText = discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0);
+
+  let shipFee = parseInt(sessionStorage.getItem("shippingFee") || "30000");
+  shippingEl.innerText = formatPrice(shipFee);
+
+  let finalTotal = Math.max(0, subtotal - discount + shipFee);
+  totalEl.innerText = formatPrice(finalTotal);
+
+  const shipCards = document.querySelectorAll(".shipping-card");
+  shipCards.forEach(card => {
+    card.onclick = () => {
+      shipCards.forEach(c => c.classList.remove("active"));
+      card.classList.add("active");
+      card.querySelector("input").checked = true;
+      
+      const rate = parseInt(card.dataset.rate || "0");
+      shipFee = rate;
+      sessionStorage.setItem("shippingFee", String(rate));
+      shippingEl.innerText = formatPrice(rate);
+      
+      finalTotal = Math.max(0, subtotal - discount + rate);
+      totalEl.innerText = formatPrice(finalTotal);
+    };
+  });
+
+  const payCards = document.querySelectorAll(".payment-card");
+  payCards.forEach(card => {
+    card.onclick = () => {
+      payCards.forEach(c => c.classList.remove("active"));
+      card.classList.add("active");
+      card.querySelector("input").checked = true;
+    };
+  });
+
+  const orderForm = document.getElementById("checkout-order-form");
+  if (orderForm) {
+    orderForm.onsubmit = (e) => {
+      e.preventDefault();
+
+      const fullName = document.getElementById("co-name").value.trim();
+      const phone = document.getElementById("co-phone").value.trim();
+      const address = document.getElementById("co-address").value.trim();
+      
+      if (!fullName || !phone || !address) {
+        showToast("Vui lòng điền đầy đủ địa chỉ nhận hàng!");
+        return;
+      }
+
+      const activeShipCard = document.querySelector(".shipping-card.active");
+      const shipMethod = activeShipCard ? activeShipCard.querySelector(".shipping-name").innerText : "Giao hàng tiêu chuẩn";
+
+      const activePayCard = document.querySelector(".payment-card.active");
+      const payMethod = activePayCard ? activePayCard.querySelector(".payment-name").innerText : "Thanh toán khi nhận hàng (COD)";
+
+      const donHang = JSON.parse(localStorage.getItem("DonHang")) || [];
+      const thanhToan = JSON.parse(localStorage.getItem("ThanhToan")) || [];
+      const ctDonHang = JSON.parse(localStorage.getItem("ChiTietDonHang")) || [];
+
+      const newOrderId = "DH-" + Math.floor(100000 + Math.random() * 900000);
+      const newPaymentId = "TT-" + Math.floor(100000 + Math.random() * 900000);
+
+      const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+
+      const orderData = {
+        orderId: newOrderId,
+        orderDate: new Date().toISOString(),
+        totalAmount: finalTotal,
+        shippingAddress: `${address} | SĐT: ${phone} | Người nhận: ${fullName}`,
+        status: "Chờ xác nhận",
+        paymentMethod: payMethod,
+        customerID: cust.customerID,
+        staffId: "NV001"
+      };
+
+      donHang.push(orderData);
+
+      const payData = {
+        paymentID: newPaymentId,
+        paymentDate: new Date().toISOString(),
+        paymentMethod: payMethod,
+        status: payMethod.includes("COD") ? "Chưa thanh toán" : "Đã thanh toán",
+        amount: finalTotal,
+        orderId: newOrderId
+      };
+
+      thanhToan.push(payData);
+
+      items.forEach(item => {
+        const prod = products.find(pr => pr.productID === item.productID);
+        ctDonHang.push({
+          orderId: newOrderId,
+          productID: item.productID,
+          quantity: item.quantityProduct,
+          unitPrice: prod ? prod.priceProduct : 0
+        });
+      });
+
+      localStorage.setItem("DonHang", JSON.stringify(donHang));
+      localStorage.setItem("ThanhToan", JSON.stringify(thanhToan));
+      localStorage.setItem("ChiTietDonHang", JSON.stringify(ctDonHang));
+
+      const member = JSON.parse(localStorage.getItem("TheThanhVien"));
+      if (member) {
+        const earnedPoints = Math.floor(finalTotal / 20000);
+        member.point += earnedPoints;
+        if (member.point >= 1000 && member.rank === "Bạc") {
+          member.rank = "Vàng";
+          member.discountRate = 0.10;
+        }
+        localStorage.setItem("TheThanhVien", JSON.stringify(member));
+
+        const history = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+        history.unshift({
+          date: new Date().toISOString().split("T")[0],
+          orderId: newOrderId,
+          points: earnedPoints,
+          type: "cộng",
+          reason: `Tích lũy đơn hàng ${newOrderId}`
+        });
+        localStorage.setItem("LichSuDiem", JSON.stringify(history));
+      }
+
+      localStorage.setItem("ChiTietGioHang", JSON.stringify([]));
+      sessionStorage.removeItem("activeCoupon");
+      sessionStorage.removeItem("shippingFee");
+      
+      const gioHangObj = JSON.parse(localStorage.getItem("GioHang")) || {};
+      gioHangObj.totalAmount = 0;
+      localStorage.setItem("GioHang", JSON.stringify(gioHangObj));
+
+      updateCartBadge();
+
+      const modal = document.getElementById("success-modal");
+      if (modal) {
+        modal.classList.add("active");
+      }
+    };
+  }
+}
+
+function initProfilePage() {
+  const member = JSON.parse(localStorage.getItem("TheThanhVien"));
+  const cust = JSON.parse(localStorage.getItem("KhachHang"));
+  const history = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+
+  if (!member || !cust) return;
+
+  const cardContainer = document.getElementById("member-card-dom");
+  const cardNum = document.getElementById("member-card-number");
+  const holderName = document.getElementById("member-holder-name");
+  const pointsVal = document.getElementById("member-points-value");
+  const tierVal = document.getElementById("member-tier-value");
+
+  if (cardContainer && member.rank === "Vàng") {
+    cardContainer.classList.add("gold");
+  }
+
+  if (cardNum) cardNum.innerText = member.cardID;
+  if (holderName) holderName.innerText = cust.name.toUpperCase();
+  if (pointsVal) pointsVal.innerText = `${member.point} Điểm`;
+  if (tierVal) tierVal.innerText = `${member.rank} MEMBER`;
+
+  const bar = document.getElementById("upgrade-progress-bar");
+  const label = document.getElementById("upgrade-progress-label");
+  const desc = document.getElementById("upgrade-progress-desc");
+
+  if (bar && label && desc) {
+    if (member.rank === "Bạc") {
+      const nextRankPoints = 1000;
+      const pct = Math.min(100, (member.point / nextRankPoints) * 100);
+      bar.style.width = `${pct}%`;
+      label.innerText = `${member.point}/1000 điểm`;
+      desc.innerText = `Tích lũy thêm ${1000 - member.point} điểm nữa để thăng hạng thẻ VÀNG (nhận giảm giá tới 10% đơn hàng)`;
+    } else {
+      bar.style.width = `100%`;
+      bar.style.background = "linear-gradient(90deg, #d97706 0%, #fbbf24 100%)";
+      label.innerText = `${member.point} điểm`;
+      desc.innerText = `Chúc mừng bạn! Bạn đã đạt hạng thẻ VÀNG cao cấp và nhận đặc quyền giảm giá 10% mặc định!`;
+    }
+  }
+
+  const tableBody = document.getElementById("points-table-body");
+  if (tableBody) {
+    tableBody.innerHTML = history.map(item => `
+      <tr>
+        <td style="font-weight: 700; color: var(--dark-light);">${item.date}</td>
+        <td><span style="font-weight: 600; padding: 4px 8px; border-radius: 6px; background-color: var(--light); font-size: 0.8rem;">${item.orderId}</span></td>
+        <td><span class="${item.type === "cộng" ? "points-add" : "points-sub"}">${item.type === "cộng" ? "+" : ""}${item.points}</span></td>
+        <td style="color: var(--gray); font-size: 0.85rem; font-weight: 500;">${item.reason}</td>
+      </tr>
+    `).join("");
+  }
+
+  window.redeemVoucher = (cost, voucherName) => {
+    let currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
+    if (currentMember.point < cost) {
+      showToast("Không đủ điểm thưởng để đổi voucher này!");
+      return;
+    }
+    currentMember.point -= cost;
+    localStorage.setItem("TheThanhVien", JSON.stringify(currentMember));
+
+    const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+    currentHistory.unshift({
+      date: new Date().toISOString().split("T")[0],
+      orderId: "VOUCHER",
+      points: -cost,
+      type: "trừ",
+      reason: `Đổi voucher ${voucherName}`
+    });
+    localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
+
+    initProfilePage();
+    showToast(`Đổi mã giảm giá thành công! Voucher: GIAM50`);
+  };
+
+  const cancelBtn = document.getElementById("btn-cancel-membership");
+  if (cancelBtn) {
+    cancelBtn.onclick = () => {
+      const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
+      currentMember.point = 0;
+      currentMember.rank = "Bạc";
+      currentMember.discountRate = 0.00;
+      localStorage.setItem("TheThanhVien", JSON.stringify(currentMember));
+      
+      const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+      currentHistory.unshift({
+        date: new Date().toISOString().split("T")[0],
+        orderId: "HỦY THẺ",
+        points: 0,
+        type: "trừ",
+        reason: "Hủy thẻ thành viên (Đặt lại điểm về 0)"
+      });
+      localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
+      
+      initProfilePage();
+      showToast("Đã đặt lại thông tin và hủy đặc quyền thẻ thành viên thành công!");
+    };
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await initDatabase();
+
+  updateCartBadge();
+  initCountdown();
+  renderFlashSale();
+  renderSuggestedProducts();
+  
+  const searchForm = document.getElementById("header-search-form");
+  if (searchForm) {
+    searchForm.onsubmit = handleSearch;
+  }
+
+  const path = window.location.pathname;
+  if (path.includes("product-list.html")) {
+    initListingPage();
+  } else if (path.includes("product-detail.html")) {
+    initDetailPage();
+  } else if (path.includes("cart.html")) {
+    initCartPage();
+  } else if (path.includes("checkout.html")) {
+    initCheckoutPage();
+  } else if (path.includes("profile.html")) {
+    initProfilePage();
+  }
+});

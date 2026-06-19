@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi Tiết Sản Phẩm - ElectroMax</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-top">
+      <div class="container">
+        <div>Hỗ trợ trực tuyến 24/7: 1800 1234</div>
+        <div style="display: flex; gap: 20px;">
+          <a href="stores.html">Hệ thống cửa hàng</a>
+          <a href="order-lookup.html">Tra cứu đơn hàng</a>
+          <a href="profile.html">Thành viên vip</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="header-main">
+      <div class="container">
+        <a href="index.html" class="logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Electro<span>Max</span>
+        </a>
+        
+        <form class="search-bar" id="header-search-form">
+          <input type="text" placeholder="Tìm kiếm tivi, tủ lạnh, máy giặt..." id="search-input">
+          <button type="submit">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </button>
+        </form>
+        
+        <div class="header-actions">
+          <a href="profile.html" class="header-btn" title="Hồ sơ thành viên">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </a>
+          <a href="cart.html" class="header-btn" title="Giỏ hàng">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            <span class="badge" id="cart-badge">0</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="nav-bar">
+      <div class="container">
+        <ul class="nav-menu">
+          <li class="nav-item"><a href="index.html" class="nav-link active">Danh mục sản phẩm</a></li>
+          <li class="nav-item"><a href="product-list.html" class="nav-link">Khuyến mãi cực hot</a></li>
+          <li class="nav-item"><a href="news.html" class="nav-link">Tin tức điện máy</a></li>
+          <li class="nav-item"><a href="contact.html" class="nav-link">Liên hệ hỗ trợ</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <div class="container page-layout">
+    <div class="detail-wrapper">
+      <main class="detail-main">
+        <div class="detail-gallery">
+          <div class="detail-gallery-main">
+            <div class="placeholder-img" style="width: 100%; height: 100%;"></div>
+          </div>
+          <div class="detail-gallery-thumbs">
+            <div class="detail-thumb active">
+              <div class="placeholder-img" style="aspect-ratio: 1/1;"></div>
+            </div>
+            <div class="detail-thumb">
+              <div class="placeholder-img" style="aspect-ratio: 1/1;"></div>
+            </div>
+            <div class="detail-thumb">
+              <div class="placeholder-img" style="aspect-ratio: 1/1;"></div>
+            </div>
+            <div class="detail-thumb">
+              <div class="placeholder-img" style="aspect-ratio: 1/1;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-info">
+          <div class="detail-header">
+            <div class="product-brand" id="dp-brand" style="font-size: 0.9rem; margin-bottom: 8px;">Thương hiệu</div>
+            <h1 class="detail-title" id="dp-name">Tên sản phẩm</h1>
+            <div class="detail-meta">
+              <div class="detail-meta-item">
+                <span class="detail-rating">★ <span id="dp-rating-num">4.8</span></span>
+              </div>
+              <div class="detail-meta-item" id="dp-reviews-count">0 Đánh giá</div>
+              <div class="detail-meta-item" id="dp-sold-count">0 Đã bán</div>
+            </div>
+          </div>
+
+          <div class="detail-price-box">
+            <div class="detail-price-row">
+              <span class="detail-price-sale" id="dp-price-sale">0đ</span>
+              <span class="detail-price-original" id="dp-price-original">0đ</span>
+              <span class="detail-price-badge" id="dp-price-badge">Giảm 0%</span>
+            </div>
+            <div style="margin-top: 12px;">
+              <span class="detail-install-tag">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                Hỗ trợ trả góp 0% qua thẻ tín dụng và công ty tài chính
+              </span>
+            </div>
+          </div>
+
+          <div class="detail-actions">
+            <button class="btn btn-outline detail-btn-cart" id="dp-btn-cart">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              Thêm vào giỏ hàng
+            </button>
+            <button class="btn btn-blue detail-btn-buy" id="dp-btn-buy">
+              Mua ngay
+            </button>
+          </div>
+
+          <div class="detail-benefits">
+            <div class="detail-benefit-item">
+              <div class="detail-benefit-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div>
+                <h4 class="detail-benefit-title">Bảo hành 24 tháng</h4>
+                <p class="detail-benefit-desc">Chính sách bảo hành tại nhà của hãng trên toàn quốc.</p>
+              </div>
+            </div>
+
+            <div class="detail-benefit-item">
+              <div class="detail-benefit-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div>
+                <h4 class="detail-benefit-title">Giao hàng miễn phí</h4>
+                <p class="detail-benefit-desc">Miễn phí giao lắp trong vòng bán kính 20km.</p>
+              </div>
+            </div>
+
+            <div class="detail-benefit-item">
+              <div class="detail-benefit-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div>
+                <h4 class="detail-benefit-title">Lỗi 1 đổi 1 trong 30 ngày</h4>
+                <p class="detail-benefit-desc">Nếu sản phẩm phát sinh lỗi từ phía nhà sản xuất.</p>
+              </div>
+            </div>
+
+            <div class="detail-benefit-item">
+              <div class="detail-benefit-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div>
+                <h4 class="detail-benefit-title">Ưu đãi thành viên VIP</h4>
+                <p class="detail-benefit-desc">Tích điểm nhận voucher chiết khấu đơn hàng tiếp theo.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <section class="detail-specs">
+        <h3 class="section-title" style="margin-bottom: 24px;">Thông Số Kỹ Thuật Chi Tiết</h3>
+        <table class="specs-table" id="dp-specs-table"></table>
+      </section>
+
+      <section class="detail-compare">
+        <h3 class="section-title" style="margin-bottom: 24px;">So Sánh Sản Phẩm Tương Tự</h3>
+        <p class="section-subtitle" style="margin-top: -16px; margin-bottom: 24px;">Giúp bạn đưa ra quyết định mua hàng chính xác nhất</p>
+        
+        <div class="compare-grid">
+          <div class="compare-col current" id="dp-compare-current"></div>
+          <div class="compare-col" id="dp-compare-alternate"></div>
+          <div class="compare-col" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--gray);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+            <span style="font-weight: 700; color: var(--gray); font-size: 0.9rem;">Thêm sản phẩm khác để so sánh</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-reviews">
+        <h3 class="section-title" style="margin-bottom: 24px;">Đánh Giá Từ Khách Hàng</h3>
+        
+        <div class="reviews-summary">
+          <div class="reviews-average">
+            <div class="reviews-average-num">4.8</div>
+            <div class="reviews-average-stars">★★★★★</div>
+            <div class="reviews-average-total">142 Đánh giá khách hàng</div>
+          </div>
+          
+          <div class="reviews-bars">
+            <div class="reviews-bar-row">
+              <span class="reviews-bar-label">5 Sao</span>
+              <div class="reviews-bar-track"><div class="reviews-bar-fill" style="width: 85%"></div></div>
+              <span class="reviews-bar-percent">85%</span>
+            </div>
+            <div class="reviews-bar-row">
+              <span class="reviews-bar-label">4 Sao</span>
+              <div class="reviews-bar-track"><div class="reviews-bar-fill" style="width: 10%"></div></div>
+              <span class="reviews-bar-percent">10%</span>
+            </div>
+            <div class="reviews-bar-row">
+              <span class="reviews-bar-label">3 Sao</span>
+              <div class="reviews-bar-track"><div class="reviews-bar-fill" style="width: 4%"></div></div>
+              <span class="reviews-bar-percent">4%</span>
+            </div>
+            <div class="reviews-bar-row">
+              <span class="reviews-bar-label">2 Sao</span>
+              <div class="reviews-bar-track"><div class="reviews-bar-fill" style="width: 1%"></div></div>
+              <span class="reviews-bar-percent">1%</span>
+            </div>
+            <div class="reviews-bar-row">
+              <span class="reviews-bar-label">1 Sao</span>
+              <div class="reviews-bar-track"><div class="reviews-bar-fill" style="width: 0%"></div></div>
+              <span class="reviews-bar-percent">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="review-list">
+          <div class="review-item">
+            <div class="review-header">
+              <span class="review-user">Nguyễn Hữu Trí</span>
+              <span class="review-date">10 ngày trước</span>
+            </div>
+            <div class="review-stars">★★★★★</div>
+            <p class="review-text">Sản phẩm dùng cực kỳ êm ái. Giặt rất sạch, nhiều tính năng giặt hơi nước giúp diệt khuẩn cho đồ em bé rất tốt. Tôi cực kỳ hài lòng với chiếc máy giặt này!</p>
+          </div>
+
+          <div class="review-item">
+            <div class="review-header">
+              <span class="review-user">Lê Thị Mai</span>
+              <span class="review-date">20 ngày trước</span>
+            </div>
+            <div class="review-stars">★★★★★</div>
+            <p class="review-text">Giao hàng cực kỳ nhanh, nhân viên kỹ thuật hỗ trợ lắp đặt rất nhiệt tình và chu đáo. Sử dụng động cơ inverter cực kỳ tiết kiệm điện và vận hành êm.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3 class="section-title" style="margin-bottom: 32px;">Sản Phẩm Bạn Có Thể Quan Tâm</h3>
+        <div class="products-grid" id="dp-related-grid"></div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h3>Về Chúng Tôi</h3>
+          <ul class="footer-links">
+            <li><a href="about.html" class="footer-link">Giới thiệu ElectroMax</a></li>
+            <li><a href="recruitment.html" class="footer-link">Tuyển dụng mới nhất</a></li>
+            <li><a href="privacy.html" class="footer-link">Chính sách bảo mật</a></li>
+            <li><a href="terms.html" class="footer-link">Điều khoản mua sắm</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-col">
+          <h3>Hỗ Trợ Khách Hàng</h3>
+          <ul class="footer-links">
+            <li><a href="shopping-guide.html" class="footer-link">Hướng dẫn mua hàng online</a></li>
+            <li><a href="shipping-policy.html" class="footer-link">Chính sách giao nhận</a></li>
+            <li><a href="return-policy.html" class="footer-link">Chính sách đổi trả hàng</a></li>
+            <li><a href="warranty-center.html" class="footer-link">Trung tâm bảo hành chính hãng</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-col">
+          <h3>Liên Hệ Với Chúng Tôi</h3>
+          <ul class="footer-links">
+            <li class="footer-link">Tổng đài mua hàng: 1800 1234</li>
+            <li class="footer-link">Khiếu nại, góp ý: 1800 5678</li>
+            <li class="footer-link">Email: hotro@electromax.vn</li>
+            <li class="footer-link">Địa chỉ: 125 Hai Bà Trưng, Quận 1, TPHCM</li>
+          </ul>
+        </div>
+        
+        <div class="footer-col footer-newsletter">
+          <h3>Đăng Ký Nhận Tin Khuyến Mãi</h3>
+          <p>Nhận ngay voucher giảm giá 100K cho đơn hàng đầu tiên của thành viên mới đăng ký.</p>
+          <form class="footer-form" onsubmit="event.preventDefault(); showToast('Cảm ơn bạn đã đăng ký nhận bản tin khuyến mãi!');">
+            <input type="email" placeholder="Email của bạn..." required>
+            <button type="submit" class="btn btn-blue" style="padding: 12px; border-radius: 8px;">Đăng ký</button>
+          </form>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <div>© 2026 ElectroMax. Tất cả quyền được bảo lưu. Thiết kế giao diện premium.</div>
+        <div class="footer-payments">
+          <div class="footer-payment-icon">COD</div>
+          <div class="footer-payment-icon">VISA</div>
+          <div class="footer-payment-icon">MOMO</div>
+          <div class="footer-payment-icon">ZALOPAY</div>
+          <div class="footer-payment-icon">VNPAY</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
