@@ -17,6 +17,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Locale;
+import java.util.HashMap;
+import java.util.Map;
+import java.net.URLDecoder;
 
 public class App {
   private static final String DB_NAME = env("DB_NAME", "Emarket");
@@ -38,6 +41,7 @@ public class App {
     server.createContext("/api/bootstrap", exchange -> handleJson(exchange, App::bootstrapJson));
     server.createContext("/api/products", exchange -> handleJson(exchange, () -> tableJson("SanPham")));
     server.createContext("/api/categories", exchange -> handleJson(exchange, () -> tableJson("DanhMuc")));
+    server.createContext("/api/checkout", App::handleCheckout);
     server.createContext("/", App::serveStatic);
     server.setExecutor(null);
     server.start();
@@ -162,7 +166,9 @@ public class App {
         "IF OBJECT_ID('KhachHang', 'U') IS NULL CREATE TABLE KhachHang (customerID INT PRIMARY KEY, name NVARCHAR(255), email VARCHAR(255), phone VARCHAR(50), address NVARCHAR(MAX))",
         "IF OBJECT_ID('TheThanhVien', 'U') IS NULL CREATE TABLE TheThanhVien (cardID VARCHAR(30) PRIMARY KEY, customerID INT, point INT, rank NVARCHAR(50), discountRate DECIMAL(4,2), FOREIGN KEY (customerID) REFERENCES KhachHang(customerID))",
         "IF OBJECT_ID('LichSuDiem', 'U') IS NULL CREATE TABLE LichSuDiem (historyID INT IDENTITY(1,1) PRIMARY KEY, date VARCHAR(20), orderId VARCHAR(30), points INT, type NVARCHAR(20), reason NVARCHAR(MAX))",
-        "IF OBJECT_ID('SanPham', 'U') IS NULL CREATE TABLE SanPham (productID VARCHAR(30) PRIMARY KEY, productName NVARCHAR(255) NOT NULL, categoryID VARCHAR(20), brand NVARCHAR(100), priceProduct INT NOT NULL, originalPrice INT NOT NULL, quantityProduct INT DEFAULT 0, capacity NVARCHAR(100), energySaving NVARCHAR(50), smartFeature NVARCHAR(50), descriptionProduct NVARCHAR(MAX), rating DECIMAL(3,1), reviewsCount INT DEFAULT 0, soldCount INT DEFAULT 0, isFlashSale BIT DEFAULT 0, soldFlash INT DEFAULT 0, limitFlash INT DEFAULT 0, FOREIGN KEY (categoryID) REFERENCES DanhMuc(categoryID))");
+        "IF OBJECT_ID('SanPham', 'U') IS NULL CREATE TABLE SanPham (productID VARCHAR(30) PRIMARY KEY, productName NVARCHAR(255) NOT NULL, categoryID VARCHAR(20), brand NVARCHAR(100), priceProduct INT NOT NULL, originalPrice INT NOT NULL, quantityProduct INT DEFAULT 0, capacity NVARCHAR(100), energySaving NVARCHAR(50), smartFeature NVARCHAR(50), descriptionProduct NVARCHAR(MAX), rating DECIMAL(3,1), reviewsCount INT DEFAULT 0, soldCount INT DEFAULT 0, isFlashSale BIT DEFAULT 0, soldFlash INT DEFAULT 0, limitFlash INT DEFAULT 0, FOREIGN KEY (categoryID) REFERENCES DanhMuc(categoryID))",
+        "IF OBJECT_ID('DonHang', 'U') IS NULL CREATE TABLE DonHang (orderId VARCHAR(30) PRIMARY KEY, orderDate VARCHAR(50), totalAmount INT, shippingAddress NVARCHAR(MAX), status NVARCHAR(50), paymentMethod NVARCHAR(100), customerID INT, staffId VARCHAR(20), FOREIGN KEY (customerID) REFERENCES KhachHang(customerID), FOREIGN KEY (staffId) REFERENCES NhanVien(staffId))",
+        "IF OBJECT_ID('ChiTietDonHang', 'U') IS NULL CREATE TABLE ChiTietDonHang (orderId VARCHAR(30), productID VARCHAR(30), quantity INT, unitPrice INT, PRIMARY KEY (orderId, productID), FOREIGN KEY (orderId) REFERENCES DonHang(orderId), FOREIGN KEY (productID) REFERENCES SanPham(productID))");
   }
 
   private static void seedCategories(Connection conn) throws SQLException {
@@ -257,6 +263,79 @@ public class App {
     exchange.sendResponseHeaders(status, bytes.length);
     try (OutputStream os = exchange.getResponseBody()) {
       os.write(bytes);
+    }
+  }
+
+  private static Map<String, String> parseFormData(String body) {
+    Map<String, String> map = new HashMap<>();
+    String[] pairs = body.split("&");
+    for (String pair : pairs) {
+      int idx = pair.indexOf("=");
+      if (idx > 0) {
+        String key = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
+        String value = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
+        map.put(key, value);
+      }
+    }
+    return map;
+  }
+
+  private static void handleCheckout(HttpExchange exchange) throws IOException {
+    if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+      send(exchange, 405, "{\"error\":\"Method not allowed\"}", "application/json; charset=utf-8");
+      return;
+    }
+    try {
+      String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+      Map<String, String> data = parseFormData(body);
+
+      String orderId = data.get("orderId");
+      String orderDate = data.get("orderDate");
+      int totalAmount = Integer.parseInt(data.get("totalAmount"));
+      String shippingAddress = data.get("shippingAddress");
+      String status = data.get("status");
+      String paymentMethod = data.get("paymentMethod");
+      int customerID = Integer.parseInt(data.get("customerID"));
+      String staffId = data.get("staffId");
+      
+      int itemCount = Integer.parseInt(data.get("itemCount"));
+
+      try (Connection conn = getConnection()) {
+        conn.setAutoCommit(false);
+        try {
+          try (PreparedStatement ps = conn.prepareStatement("INSERT INTO DonHang (orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerID, staffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+            ps.setString(1, orderId);
+            ps.setString(2, orderDate);
+            ps.setInt(3, totalAmount);
+            ps.setString(4, shippingAddress);
+            ps.setString(5, status);
+            ps.setString(6, paymentMethod);
+            ps.setInt(7, customerID);
+            ps.setString(8, staffId);
+            ps.executeUpdate();
+          }
+
+          try (PreparedStatement ps = conn.prepareStatement("INSERT INTO ChiTietDonHang (orderId, productID, quantity, unitPrice) VALUES (?, ?, ?, ?)")) {
+            for (int i = 0; i < itemCount; i++) {
+              ps.setString(1, orderId);
+              ps.setString(2, data.get("item_" + i + "_id"));
+              ps.setInt(3, Integer.parseInt(data.get("item_" + i + "_qty")));
+              ps.setInt(4, Integer.parseInt(data.get("item_" + i + "_price")));
+              ps.addBatch();
+            }
+            ps.executeBatch();
+          }
+
+          conn.commit();
+          send(exchange, 200, "{\"success\":true}", "application/json; charset=utf-8");
+        } catch (SQLException e) {
+          conn.rollback();
+          throw e;
+        }
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      send(exchange, 500, "{\"error\":\"" + escapeJson(ex.getMessage()) + "\"}", "application/json; charset=utf-8");
     }
   }
 

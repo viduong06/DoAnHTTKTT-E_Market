@@ -846,7 +846,7 @@ function initCheckoutPage() {
 
   const orderForm = document.getElementById("checkout-order-form");
   if (orderForm) {
-    orderForm.onsubmit = (e) => {
+    orderForm.onsubmit = async (e) => {
       e.preventDefault();
 
       const fullName = document.getElementById("co-name").value.trim();
@@ -864,38 +864,56 @@ function initCheckoutPage() {
       const activePayCard = document.querySelector(".payment-card.active");
       const payMethod = activePayCard ? activePayCard.querySelector(".payment-name").innerText : "Thanh toán khi nhận hàng (COD)";
 
-      const donHang = JSON.parse(localStorage.getItem("DonHang")) || [];
-      const thanhToan = JSON.parse(localStorage.getItem("ThanhToan")) || [];
-      const ctDonHang = JSON.parse(localStorage.getItem("ChiTietDonHang")) || [];
-
       const newOrderId = "DH-" + Math.floor(100000 + Math.random() * 900000);
       const newPaymentId = "TT-" + Math.floor(100000 + Math.random() * 900000);
 
       const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+      const orderDateStr = new Date().toISOString();
+
+      const formData = new URLSearchParams();
+      formData.append("orderId", newOrderId);
+      formData.append("orderDate", orderDateStr);
+      formData.append("totalAmount", finalTotal);
+      formData.append("shippingAddress", `${address} | SĐT: ${phone} | Người nhận: ${fullName}`);
+      formData.append("status", "Chờ xác nhận");
+      formData.append("paymentMethod", payMethod);
+      formData.append("customerID", cust.customerID || 1);
+      formData.append("staffId", "NV001");
+      
+      formData.append("itemCount", items.length);
+      items.forEach((item, index) => {
+        const prod = products.find(pr => pr.productID === item.productID);
+        formData.append(`item_${index}_id`, item.productID);
+        formData.append(`item_${index}_qty`, item.quantityProduct);
+        formData.append(`item_${index}_price`, prod ? prod.priceProduct : 0);
+      });
+
+      try {
+        const res = await fetch(`${API_BASE}/api/checkout`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData.toString()
+        });
+        if (!res.ok) console.error("Checkout failed on backend");
+      } catch (err) {
+        console.error("Backend checkout request failed:", err);
+      }
+
+      const donHang = JSON.parse(localStorage.getItem("DonHang")) || [];
+      const ctDonHang = JSON.parse(localStorage.getItem("ChiTietDonHang")) || [];
 
       const orderData = {
         orderId: newOrderId,
-        orderDate: new Date().toISOString(),
+        orderDate: orderDateStr,
         totalAmount: finalTotal,
         shippingAddress: `${address} | SĐT: ${phone} | Người nhận: ${fullName}`,
         status: "Chờ xác nhận",
         paymentMethod: payMethod,
-        customerID: cust.customerID,
+        customerID: cust.customerID || 1,
         staffId: "NV001"
       };
 
       donHang.push(orderData);
-
-      const payData = {
-        paymentID: newPaymentId,
-        paymentDate: new Date().toISOString(),
-        paymentMethod: payMethod,
-        status: payMethod.includes("COD") ? "Chưa thanh toán" : "Đã thanh toán",
-        amount: finalTotal,
-        orderId: newOrderId
-      };
-
-      thanhToan.push(payData);
 
       items.forEach(item => {
         const prod = products.find(pr => pr.productID === item.productID);
@@ -908,7 +926,6 @@ function initCheckoutPage() {
       });
 
       localStorage.setItem("DonHang", JSON.stringify(donHang));
-      localStorage.setItem("ThanhToan", JSON.stringify(thanhToan));
       localStorage.setItem("ChiTietDonHang", JSON.stringify(ctDonHang));
 
       const member = JSON.parse(localStorage.getItem("TheThanhVien"));
