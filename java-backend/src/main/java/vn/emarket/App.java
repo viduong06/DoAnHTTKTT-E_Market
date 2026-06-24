@@ -29,9 +29,17 @@ public class App {
       "jdbc:sqlserver://localhost:1433;databaseName=" + DB_NAME + ";encrypt=true;trustServerCertificate=true");
   private static final String DB_USER = env("DB_USER", "sa");
   private static final String DB_PASSWORD = env("DB_PASSWORD", "123456");
-  private static final Path WEB_ROOT = Path.of(env("WEB_ROOT", "../webpttkhttt")).toAbsolutePath().normalize();
+  private static Path WEB_ROOT;
+  private static Path ADMIN_ROOT;
 
   public static void main(String[] args) throws Exception {
+    // Resolve đường dẫn từ working directory (java-backend/)
+    WEB_ROOT   = Path.of(env("WEB_ROOT",   "../webpttkhttt")).toAbsolutePath().normalize();
+    ADMIN_ROOT = Path.of(env("ADMIN_ROOT", "../admin")).toAbsolutePath().normalize();
+
+    System.out.println("WEB_ROOT   = " + WEB_ROOT);
+    System.out.println("ADMIN_ROOT = " + ADMIN_ROOT);
+
     Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
     ensureDatabase();
     migrateAndSeed();
@@ -41,6 +49,7 @@ public class App {
     server.createContext("/api/bootstrap", exchange -> handleJson(exchange, App::bootstrapJson));
     server.createContext("/api/products", exchange -> handleJson(exchange, () -> tableJson("SanPham")));
     server.createContext("/api/categories", exchange -> handleJson(exchange, () -> tableJson("DanhMuc")));
+    server.createContext("/api/orders", App::handleOrders);
     server.createContext("/api/checkout", App::handleCheckout);
     server.createContext("/", App::serveStatic);
     server.setExecutor(null);
@@ -120,14 +129,32 @@ public class App {
 
   private static void serveStatic(HttpExchange exchange) throws IOException {
     String rawPath = exchange.getRequestURI().getPath();
+
+    // Route /admin/... → ADMIN_ROOT
+    if (rawPath.startsWith("/admin/") || rawPath.equals("/admin")) {
+      String relative = rawPath.replaceFirst("^/admin/?", "");
+      if (relative.isEmpty()) relative = "admin.html";
+      Path target = ADMIN_ROOT.resolve(relative).normalize();
+      System.out.println("[admin] " + rawPath + " -> " + target + " | exists=" + Files.exists(target));
+      if (target.startsWith(ADMIN_ROOT) && Files.exists(target) && !Files.isDirectory(target)) {
+        serveFile(exchange, target);
+      } else {
+        send(exchange, 404, "Admin file not found: " + target, "text/plain; charset=utf-8");
+      }
+      return;
+    }
+
+    // Route mặc định → WEB_ROOT
     String relative = rawPath.equals("/") ? "index.html" : rawPath.substring(1);
     Path target = WEB_ROOT.resolve(relative).normalize();
-
     if (!target.startsWith(WEB_ROOT) || Files.isDirectory(target) || !Files.exists(target)) {
       send(exchange, 404, "Not found", "text/plain; charset=utf-8");
       return;
     }
+    serveFile(exchange, target);
+  }
 
+  private static void serveFile(HttpExchange exchange, Path target) throws IOException {
     byte[] bytes = Files.readAllBytes(target);
     exchange.getResponseHeaders().set("Content-Type", contentType(target));
     exchange.sendResponseHeaders(200, bytes.length);
@@ -278,6 +305,64 @@ public class App {
       }
     }
     return map;
+  }
+
+  private static void handleOrders(HttpExchange exchange) throws IOException {
+    String method = exchange.getRequestMethod().toUpperCase();
+
+    // GET /api/orders — lấy danh sách đơn hàng
+    if ("GET".equals(method)) {
+      try {
+        StringBuilder json = new StringBuilder("[");
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+               "SELECT orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerID " +
+               "FROM DonHang ORDER BY orderDate DESC")) {
+          int row = 0;
+          while (rs.next()) {
+            if (row++ > 0) json.append(',');
+            json.append(rowToJson(rs));
+          }
+        }
+        json.append(']');
+        send(exchange, 200, json.toString(), "application/json; charset=utf-8");
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        send(exchange, 500, "{\"error\":\"" + escapeJson(ex.getMessage()) + "\"}", "application/json; charset=utf-8");
+      }
+      return;
+    }
+
+    // POST /api/orders/update-status — cập nhật trạng thái đơn
+    if ("POST".equals(method)) {
+      try {
+        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        Map<String, String> data = parseFormData(body);
+        String orderId = data.get("orderId");
+        String status  = data.get("status");
+
+        if (orderId == null || status == null) {
+          send(exchange, 400, "{\"error\":\"Missing orderId or status\"}", "application/json; charset=utf-8");
+          return;
+        }
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+               "UPDATE DonHang SET status = ? WHERE orderId = ?")) {
+          ps.setString(1, status);
+          ps.setString(2, orderId);
+          int rows = ps.executeUpdate();
+          send(exchange, 200, "{\"success\":true,\"updated\":" + rows + "}", "application/json; charset=utf-8");
+        }
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        send(exchange, 500, "{\"error\":\"" + escapeJson(ex.getMessage()) + "\"}", "application/json; charset=utf-8");
+      }
+      return;
+    }
+
+    send(exchange, 405, "{\"error\":\"Method not allowed\"}", "application/json; charset=utf-8");
   }
 
   private static void handleCheckout(HttpExchange exchange) throws IOException {

@@ -777,9 +777,11 @@ function initCheckoutPage() {
   const summaryList = document.getElementById("checkout-summary-list");
   if (!summaryList) return;
 
+  console.log("[DEBUG] initCheckoutPage | items:", items.length, "| products:", products.length);
+
   if (items.length === 0) {
     summaryList.innerHTML = `<div style="color: var(--gray); text-align: center; padding: 24px 0;">Giỏ hàng trống!</div>`;
-    return;
+    // KHÔNG return sớm — vẫn cần bind các event phía dưới
   }
 
   let subtotal = 0;
@@ -927,6 +929,7 @@ function initCheckoutPage() {
 
       localStorage.setItem("DonHang", JSON.stringify(donHang));
       localStorage.setItem("ChiTietDonHang", JSON.stringify(ctDonHang));
+      console.log("[DEBUG] Đã lưu đơn hàng:", newOrderId, "| DonHang hiện tại:", donHang.length, "đơn");
 
       const member = JSON.parse(localStorage.getItem("TheThanhVien"));
       if (member) {

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - ElectroMax</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <section class="info-hero" style="margin-top:0;">
+    <div class="container">
+      <h1>Admin Dashboard</h1>
+      <p>Giao diện nhân viên bán hàng dùng để xem đơn, xác nhận đơn, hủy đơn và theo dõi trạng thái xử lý.</p>
+    </div>
+  </section>
+
+  <main class="info-section">
+    <div class="container">
+      <div class="admin-layout">
+
+        <aside class="admin-sidebar">
+          <h2>ElectroMax Admin</h2>
+          <div class="admin-menu-item active">Order List</div>
+          <div class="admin-menu-item">Customers</div>
+          <div class="admin-menu-item">Products</div>
+          <div class="admin-menu-item">Reports</div>
+        </aside>
+
+        <section class="admin-content">
+          <div class="admin-stats">
+            <div class="admin-stat"><span>Chờ xác nhận</span><strong id="stat-pending">0</strong></div>
+            <div class="admin-stat"><span>Đã xác nhận</span><strong id="stat-confirmed">0</strong></div>
+            <div class="admin-stat"><span>Đã hủy</span><strong id="stat-canceled">0</strong></div>
+            <div class="admin-stat"><span>Hoàn thành</span><strong id="stat-completed">0</strong></div>
+          </div>
+
+          <div class="info-card">
+            <h3>Order Management · Welcome, Sales Staff!</h3>
+            <p>Danh sách đơn hàng đang chờ xử lý.</p>
+          </div>
+
+          <div id="admin-order-list">
+            <p style="color: var(--gray); text-align: center; padding: 32px;">Chưa có đơn hàng nào.</p>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="border-top:none;">
+        <div>© 2026 ElectroMax. Tất cả quyền được bảo lưu.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const API_BASE = "http://localhost:8080";
+
+    function formatPrice(n) {
+      return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(n);
+    }
+
+    function getCustomerName(shippingAddress) {
+      const match = shippingAddress && shippingAddress.match(/Người nhận:\s*(.+)/);
+      return match ? match[1].trim() : shippingAddress || "Khách vãng lai";
+    }
+
+    async function loadOrders() {
+      try {
+        const res = await fetch(`${API_BASE}/api/orders`);
+        if (!res.ok) throw new Error("API lỗi");
+        const orders = await res.json();
+        renderOrders(orders, "db");
+      } catch (err) {
+        // Fallback: đọc từ localStorage nếu không có backend
+        const orders = JSON.parse(localStorage.getItem("DonHang") || "[]").reverse();
+        renderOrders(orders, "local");
+      }
+    }
+
+    function renderOrders(orders, source) {
+      const list = document.getElementById("admin-order-list");
+      const srcBadge = document.getElementById("data-source");
+      if (srcBadge) {
+        srcBadge.textContent = source === "db" ? "Nguồn: SQL Server" : "Nguồn: localStorage (backend offline)";
+        srcBadge.style.color = source === "db" ? "var(--success, green)" : "var(--danger, red)";
+      }
+
+      // stats
+      document.getElementById("stat-pending").textContent   = orders.filter(o => o.status === "Chờ xác nhận").length;
+      document.getElementById("stat-confirmed").textContent = orders.filter(o => o.status === "Đã xác nhận").length;
+      document.getElementById("stat-canceled").textContent  = orders.filter(o => o.status === "Đã hủy").length;
+      document.getElementById("stat-completed").textContent = orders.filter(o => o.status === "Hoàn thành").length;
+
+      if (orders.length === 0) {
+        list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:32px;">Chưa có đơn hàng nào.</p>';
+        return;
+      }
+
+      list.innerHTML = orders.map(order => {
+        const customer  = getCustomerName(order.shippingAddress);
+        const date      = new Date(order.orderDate).toLocaleDateString("vi-VN");
+        const isCanceled   = order.status === "Đã hủy";
+        const isConfirmed  = order.status === "Đã xác nhận" || order.status === "Hoàn thành";
+
+        return `
+          <div class="admin-order" id="order-${order.orderId}">
+            <div>
+              <b>Order ID: ${order.orderId}</b>
+              <span class="admin-status">${order.status}</span>
+              <p>Khách hàng: ${customer} · ${formatPrice(order.totalAmount)} · ${date}</p>
+              <p style="font-size:0.82rem;color:var(--gray);">${order.shippingAddress}</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              ${!isConfirmed && !isCanceled ? `<button class="btn btn-blue" onclick="updateStatus('${order.orderId}','Đã xác nhận')">Xác nhận đơn</button>` : ""}
+              ${!isCanceled               ? `<button class="btn btn-danger" onclick="updateStatus('${order.orderId}','Đã hủy')">Hủy đơn</button>` : ""}
+              ${isCanceled               ? `<span style="color:var(--danger);font-weight:600;">Đã hủy</span>` : ""}
+            </div>
+          </div>`;
+      }).join("");
+    }
+
+    async function updateStatus(orderId, status) {
+      // Thử cập nhật qua API trước
+      try {
+        const body = new URLSearchParams({ orderId, status });
+        const res = await fetch(`${API_BASE}/api/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString()
+        });
+        if (!res.ok) throw new Error("API lỗi");
+      } catch (err) {
+        // Fallback: cập nhật localStorage
+        const orders = JSON.parse(localStorage.getItem("DonHang") || "[]");
+        const idx = orders.findIndex(o => o.orderId === orderId);
+        if (idx > -1) {
+          orders[idx].status = status;
+          localStorage.setItem("DonHang", JSON.stringify(orders));
+        }
+      }
+      loadOrders(); // reload lại danh sách
+    }
+
+    function addTestOrder() {
+      const orders = JSON.parse(localStorage.getItem("DonHang") || "[]");
+      const id = "DH-" + Math.floor(100000 + Math.random() * 900000);
+      orders.push({
+        orderId: id,
+        orderDate: new Date().toISOString(),
+        totalAmount: Math.floor(500000 + Math.random() * 5000000),
+        shippingAddress: "123 Nguyễn Huệ, Q.1, TP.HCM | SĐT: 0909123456 | Người nhận: Khách Test",
+        status: "Chờ xác nhận",
+        paymentMethod: "COD",
+        customerID: 1
+      });
+      localStorage.setItem("DonHang", JSON.stringify(orders));
+      loadOrders();
+    }
+
+    function clearAllOrders() {
+      if (confirm("Xóa toàn bộ đơn hàng khỏi localStorage?")) {
+        localStorage.setItem("DonHang", JSON.stringify([]));
+        loadOrders();
+      }
+    }
+
+    // Load lần đầu
+    loadOrders();
+
+    // Polling 5 giây
+    setInterval(loadOrders, 5000);
+
+    // Bắt thay đổi từ tab khác
+    window.addEventListener("storage", e => { if (e.key === "DonHang") loadOrders(); });
+  </script>
+
+</body>
+</html>
