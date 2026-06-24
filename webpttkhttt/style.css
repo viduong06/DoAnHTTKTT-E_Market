@@ -743,55 +743,6 @@ img {
   color: var(--primary);
 }
 
-.installment-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.installment-card {
-  background-color: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 32px;
-  display: flex;
-  gap: 24px;
-  transition: var(--transition);
-}
-
-.installment-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary);
-}
-
-.installment-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background-color: var(--primary-light);
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.installment-icon svg {
-  width: 32px;
-  height: 32px;
-}
-
-.installment-title {
-  font-size: 1.2rem;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-
-.installment-desc {
-  font-size: 0.9rem;
-  color: var(--gray);
-  margin-bottom: 16px;
-}
 
 .footer {
   background-color: var(--dark);
