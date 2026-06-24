@@ -997,42 +997,6 @@ img {
   border-color: var(--primary);
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin-top: 48px;
-}
-
-.pagination-item {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background-color: var(--white);
-  font-weight: 700;
-  font-size: 0.9rem;
-  transition: var(--transition);
-  cursor: pointer;
-}
-
-.pagination-item:hover, .pagination-item.active {
-  background-color: var(--primary);
-  color: var(--white);
-  border-color: var(--primary);
-}
-
-.pagination-ellipsis {
-  color: var(--gray);
-  font-weight: 700;
-  width: 40px;
-  text-align: center;
-}
-
 .detail-wrapper {
   display: flex;
   flex-direction: column;
@@ -1660,41 +1624,6 @@ img {
 .summary-value {
   font-weight: 700;
   color: var(--dark);
-}
-
-.installment-checkbox {
-  margin-top: 24px;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background-color: var(--primary-light);
-  border-radius: 12px;
-  padding: 16px;
-  cursor: pointer;
-}
-
-.installment-checkbox input {
-  margin-top: 3px;
-  width: 18px;
-  height: 18px;
-  accent-color: var(--primary);
-  cursor: pointer;
-}
-
-.installment-checkbox-label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--primary-hover);
-  line-height: 1.4;
-}
-
-.installment-checkbox-label span {
-  display: block;
-  font-weight: 500;
-  color: var(--gray);
-  margin-top: 2px;
-  font-size: 0.75rem;
 }
 
 .summary-btn {
