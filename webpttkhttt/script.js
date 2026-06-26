@@ -1005,12 +1005,36 @@ function initProfilePage() {
     `).join("");
   }
 
-  window.redeemVoucher = (cost, voucherName) => {
+  window.redeemVoucher = async (cost, voucherName) => {
     let currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
     if (currentMember.point < cost) {
       showToast("Không đủ điểm thưởng để đổi voucher này!");
       return;
     }
+    const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+
+    const formData = new URLSearchParams();
+    formData.append("customerID", cust.customerID || 1);
+    formData.append("pointsChange", -cost);
+    formData.append("action", "redeem");
+    formData.append("orderId", "VOUCHER");
+    formData.append("type", "trừ");
+    formData.append("reason", `Đổi voucher ${voucherName}`);
+    formData.append("date", new Date().toISOString().split("T")[0]);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/member/update-points`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData.toString()
+      });
+      if (!res.ok) {
+        console.error("Backend points deduction failed");
+      }
+    } catch (err) {
+      console.error("Backend points deduction request failed:", err);
+    }
+
     currentMember.point -= cost;
     localStorage.setItem("TheThanhVien", JSON.stringify(currentMember));
 
@@ -1030,8 +1054,32 @@ function initProfilePage() {
 
   const cancelBtn = document.getElementById("btn-cancel-membership");
   if (cancelBtn) {
-    cancelBtn.onclick = () => {
+    cancelBtn.onclick = async () => {
       const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
+      const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+
+      const formData = new URLSearchParams();
+      formData.append("customerID", cust.customerID || 1);
+      formData.append("pointsChange", 0);
+      formData.append("action", "cancel");
+      formData.append("orderId", "HỦY THẺ");
+      formData.append("type", "trừ");
+      formData.append("reason", "Hủy thẻ thành viên (Đặt lại điểm về 0)");
+      formData.append("date", new Date().toISOString().split("T")[0]);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/member/update-points`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData.toString()
+        });
+        if (!res.ok) {
+          console.error("Backend member cancellation failed");
+        }
+      } catch (err) {
+        console.error("Backend member cancellation request failed:", err);
+      }
+
       currentMember.point = 0;
       currentMember.rank = "Bạc";
       currentMember.discountRate = 0.00;

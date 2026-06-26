@@ -51,6 +51,7 @@ public class App {
     server.createContext("/api/categories", exchange -> handleJson(exchange, () -> tableJson("DanhMuc")));
     server.createContext("/api/orders", App::handleOrders);
     server.createContext("/api/checkout", App::handleCheckout);
+    server.createContext("/api/member/update-points", App::handleUpdatePoints);
     server.createContext("/", App::serveStatic);
     server.setExecutor(null);
     server.start();
@@ -418,6 +419,18 @@ public class App {
             ps.executeBatch();
           }
 
+          // Cập nhật điểm tích lũy và lịch sử điểm trong DB khi mua hàng
+          int earnedPoints = totalAmount / 20000;
+          if (earnedPoints > 0) {
+            String dateOnly = "2026-06-26";
+            if (orderDate != null && orderDate.contains("T")) {
+              dateOnly = orderDate.split("T")[0];
+            } else if (orderDate != null) {
+              dateOnly = orderDate;
+            }
+            updateMemberPointsAndHistory(conn, customerID, earnedPoints, "add", orderId, "cộng", "Tích lũy đơn hàng " + orderId, dateOnly);
+          }
+
           conn.commit();
           send(exchange, 200, "{\"success\":true}", "application/json; charset=utf-8");
         } catch (SQLException e) {
@@ -428,6 +441,98 @@ public class App {
     } catch (Exception ex) {
       ex.printStackTrace();
       send(exchange, 500, "{\"error\":\"" + escapeJson(ex.getMessage()) + "\"}", "application/json; charset=utf-8");
+    }
+  }
+
+  private static void handleUpdatePoints(HttpExchange exchange) throws IOException {
+    if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+      send(exchange, 405, "{\"error\":\"Method not allowed\"}", "application/json; charset=utf-8");
+      return;
+    }
+    try {
+      String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+      Map<String, String> data = parseFormData(body);
+
+      int customerID = Integer.parseInt(data.getOrDefault("customerID", "1"));
+      int pointsChange = Integer.parseInt(data.getOrDefault("pointsChange", "0"));
+      String action = data.getOrDefault("action", "add");
+      String orderId = data.getOrDefault("orderId", "VOUCHER");
+      String type = data.getOrDefault("type", "trừ");
+      String reason = data.getOrDefault("reason", "");
+      String date = data.getOrDefault("date", new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()));
+
+      try (Connection conn = getConnection()) {
+        conn.setAutoCommit(false);
+        try {
+          updateMemberPointsAndHistory(conn, customerID, pointsChange, action, orderId, type, reason, date);
+          conn.commit();
+          send(exchange, 200, "{\"success\":true}", "application/json; charset=utf-8");
+        } catch (SQLException e) {
+          conn.rollback();
+          throw e;
+        }
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      send(exchange, 500, "{\"error\":\"" + escapeJson(ex.getMessage()) + "\"}", "application/json; charset=utf-8");
+    }
+  }
+
+  private static void updateMemberPointsAndHistory(Connection conn, int customerID, int pointsChange, String action, String orderId, String type, String reason, String date) throws SQLException {
+    int currentPoints = 0;
+    String currentRank = "Bạc";
+    double discountRate = 0.00;
+    boolean hasMember = false;
+    
+    try (PreparedStatement ps = conn.prepareStatement("SELECT point, rank, discountRate FROM TheThanhVien WHERE customerID = ?")) {
+      ps.setInt(1, customerID);
+      try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
+          currentPoints = rs.getInt("point");
+          currentRank = rs.getString("rank");
+          discountRate = rs.getDouble("discountRate");
+          hasMember = true;
+        }
+      }
+    }
+    
+    if (!hasMember) {
+      return;
+    }
+    
+    int newPoints = currentPoints;
+    String newRank = currentRank;
+    double newDiscountRate = discountRate;
+    
+    if ("cancel".equalsIgnoreCase(action)) {
+      newPoints = 0;
+      newRank = "Bạc";
+      newDiscountRate = 0.00;
+    } else {
+      newPoints = currentPoints + pointsChange;
+      if (newPoints < 0) newPoints = 0;
+      
+      if ("Bạc".equals(currentRank) && newPoints >= 1000) {
+        newRank = "Vàng";
+        newDiscountRate = 0.10;
+      }
+    }
+    
+    try (PreparedStatement ps = conn.prepareStatement("UPDATE TheThanhVien SET point = ?, rank = ?, discountRate = ? WHERE customerID = ?")) {
+      ps.setInt(1, newPoints);
+      ps.setString(2, newRank);
+      ps.setDouble(3, newDiscountRate);
+      ps.setInt(4, customerID);
+      ps.executeUpdate();
+    }
+    
+    try (PreparedStatement ps = conn.prepareStatement("INSERT INTO LichSuDiem (date, orderId, points, type, reason) VALUES (?, ?, ?, ?, ?)")) {
+      ps.setString(1, date);
+      ps.setString(2, orderId);
+      ps.setInt(3, pointsChange);
+      ps.setString(4, type);
+      ps.setString(5, reason);
+      ps.executeUpdate();
     }
   }
 
