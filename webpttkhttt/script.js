@@ -1,44 +1,26 @@
 
 const API_BASE = window.location.port === "8080" ? "" : "http://localhost:8080";
 
-// Map ảnh sản phẩm theo productID
-const PRODUCT_IMAGES = {
-  // Máy giặt
-  "SP_MG_01": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtW-CkgiZHTREp6b9TWoOalEPDsqc0kz9Wgi8u6FSiKQ&s=10",  // Máy giặt Samsung Inverter 10kg
-  "SP_MG_02": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjwuZxeHXek4FrsAfDUmmUL6zxrqYMEXFjSXAL3ca5jQ&s=10",  // Máy giặt LG AI DD 9kg
-  "SP_MG_03": "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=300&fit=crop&sat=-50",  // Máy giặt Panasonic Inverter 10kg
-  "SP_MG_04": "https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcRlBhKqLwdW-M_Y5EQgCfuGQxxlDdmmN2ys5lTo80oyDcL_PZ5x9zAUlFGeplEF-qo9Xdr3FxqFQHhNIrGLKbEuZfZL1BbPE2jkLVIeYkMjYB5j2zj2ChNf3NSvrFSmHpnLHaCyVhv8wMk&usqp=CAc",  // Máy giặt Toshiba Inverter 9kg
-  "SP_MG_05": "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=300&fit=crop&hue=200",  // Máy giặt Samsung EcoBubble 12kg
-  // Tủ lạnh
-  "SP_TL_01": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuD0yCki0slDMDfBMaiSdEqGGZXUqrc4Bc8RSLdPBAcA&s=10",  // Tủ lạnh Panasonic Inverter 326L
-  "SP_TL_02": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3gcDuCR4eK5Wgv7t57UzDdqDIS-BITZX7yHxwjiwmUA&s=10",  // Tủ lạnh Samsung Bespoke 352L
-  "SP_TL_03": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrbTMZHvPYlk6DjFo7l6i0UXNdbWKaslIpqmrju2pqyQ&s=10",  // Tủ lạnh LG InstaView 506L
-  "SP_TL_04": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcReOFEopVLCi11--w95AA5fSU4z7hLYO_3n0kT5-Oo3UA&s=10",  // Tủ lạnh Toshiba Inverter 233L
-  "SP_TL_05": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdwhXjPzvIxcQxCJC_QPBW_Lf_0kWAFgrokpIb3X6Nw&s=10",  // Tủ lạnh Xiaomi Side By Side 536L
-  // Tivi
-  "SP_TV_01": "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=300&fit=crop",  // Smart TV Sony 4K 55 inch
-  "SP_TV_02": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDX8KBJLkqi0_v4xOl-M7-WJSRV00_yqFSYCBWA6O2aw&s=10",  // Smart TV LG OLED 48 inch
-  "SP_TV_03": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNGoZWLOrfENPSkissEK5iD7C3lLXfSfkjQSsniJ_GmQ&s=10",  // Smart TV Samsung QLED 65 inch
-  "SP_TV_04": "https://images.unsplash.com/photo-1461151304267-38535e780c79?w=400&h=300&fit=crop&sat=-40",  // Smart TV Xiaomi 43 inch
-  "SP_TV_05": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-HulsvpCcOVNetq3IzNb3P7cZkYy6X63gKcz8N5UegA&s=10",  // Smart TV Sony Bravia 75 inch
-  // Máy lạnh
-  "SP_ML_01": "https://shopdieuhoa.com/wp-content/uploads/2023/09/FTKY-2.jpg",  // Máy lạnh Daikin Inverter 1.5HP
-  "SP_ML_02": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRh75vKhOf_EhEcnuAhMHGz1OePNm9C7ZlfUY0mLp4x-g&s",  // Máy lạnh Panasonic Nanoe X 1HP
-  "SP_ML_03": "https://bizweb.dktcdn.net/100/444/251/products/may-lanh-lg-inverter-1-5-hp-iec12g2-2-465a2369-2ebf-4eb0-a4fd-f2dbb5eec437.jpg?v=1773301359683",  // Máy lạnh LG Dual Cool 2HP
-  "SP_ML_04": "https://bizweb.dktcdn.net/100/439/998/products/dieu-hoa-samsung-wind-free-inverter-1-hp-ar10cyfaawknsv-1.jpg?v=1742795758290",  // Máy lạnh Samsung WindFree 1HP
-  "SP_ML_05": "https://bizweb.dktcdn.net/thumb/1024x1024/100/053/571/products/tsb3-7c91dbfb-d5d0-47e8-ae98-6ab9782f9e01-2f1bd357-9e45-4459-b05e-21aa9d062d52-7cec2014-c3d3-4aaa-a7a1-464654f7efb7-f88fb98d-2312-47ac-941a-073438a60a14.jpg?v=1771846856720",  // Máy lạnh Toshiba Inverter 1.5HP
-};
+// Bảng ảnh được load từ product-images.html
+const IMAGE_MAP = {};
 
-// Fallback theo category
-const CATEGORY_IMAGES = {
-  "DM_MG": "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=300&fit=crop",
-  "DM_TL": "https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=400&h=300&fit=crop",
-  "DM_TV": "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=300&fit=crop",
-  "DM_ML": "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&h=300&fit=crop",
-};
+async function loadImageMap() {
+  try {
+    const res = await fetch("product-images.html");
+    const text = await res.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, "text/html");
+    doc.querySelectorAll("img[id]").forEach(img => {
+      IMAGE_MAP[img.id] = img.src;
+    });
+  } catch (e) {
+    console.warn("Không load được product-images.html", e);
+  }
+}
 
-function getProductImage(productID, categoryID) {
-  return PRODUCT_IMAGES[productID] || CATEGORY_IMAGES[categoryID] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop";
+function getProductImage(p) {
+  return IMAGE_MAP[p.productID] || IMAGE_MAP[p.categoryID]
+    || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop";
 }
 
 async function initDatabase() {
@@ -226,7 +208,7 @@ function renderFlashSale() {
         <span class="product-badge-flash">FLASH SALE</span>
         <span class="product-installment">Trả góp 0%</span>
         <div class="product-img-wrapper">
-          <img src="${getProductImage(p.productID, p.categoryID)}" alt="${p.productName}" class="product-img" loading="lazy">
+          <img src="${getProductImage(p)}" alt="${p.productName}" class="product-img" loading="lazy">
         </div>
         <div class="product-info">
           <div class="product-brand">${p.brand}</div>
@@ -267,7 +249,7 @@ function renderSuggestedProducts() {
         <span class="product-badge-discount">-${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%</span>
         <span class="product-installment">Trả góp 0%</span>
         <div class="product-img-wrapper">
-          <img src="${getProductImage(p.productID, p.categoryID)}" alt="${p.productName}" class="product-img" loading="lazy">
+          <img src="${getProductImage(p)}" alt="${p.productName}" class="product-img" loading="lazy">
         </div>
         <div class="product-info">
           <div class="product-brand">${p.brand}</div>
@@ -387,7 +369,7 @@ function renderListingGrid(products) {
         <span class="product-badge-discount">-${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%</span>
         <span class="product-installment">Trả góp 0%</span>
         <div class="product-img-wrapper">
-          <img src="${getProductImage(p.productID, p.categoryID)}" alt="${p.productName}" class="product-img" loading="lazy">
+          <img src="${getProductImage(p)}" alt="${p.productName}" class="product-img" loading="lazy">
         </div>
         <div class="product-info">
           <div class="product-brand">${p.brand}</div>
@@ -488,7 +470,7 @@ function initDetailPage() {
   if (badgeEl) badgeEl.innerText = `Giảm -${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%`;
 
   // Set ảnh gallery
-  const imgUrl = getProductImage(p.productID, p.categoryID);
+  const imgUrl = getProductImage(p);
   const galleryMain = document.querySelector(".detail-gallery-main");
   if (galleryMain) {
     galleryMain.innerHTML = `<img src="${imgUrl}" alt="${p.productName}" style="width:100%;height:100%;object-fit:contain;border-radius:var(--radius);">`;
@@ -553,7 +535,7 @@ function initDetailPage() {
         <div class="product-card">
           <span class="product-badge-discount">-${Math.round((1 - item.priceProduct/item.originalPrice)*100)}%</span>
           <div class="product-img-wrapper">
-            <img src="${getProductImage(item.productID, item.categoryID)}" alt="${item.productName}" class="product-img" loading="lazy">
+            <img src="${getProductImage(item)}" alt="${item.productName}" class="product-img" loading="lazy">
           </div>
           <div class="product-info">
             <div class="product-brand">${item.brand}</div>
@@ -639,7 +621,7 @@ function renderCartList() {
       <div class="cart-item">
         <div class="cart-product-info">
           <div class="cart-product-img">
-            <img src="${getProductImage(p.productID, p.categoryID)}" alt="${p.productName}" style="width:80px;height:80px;object-fit:contain;border-radius:8px;">
+            <img src="${getProductImage(p)}" alt="${p.productName}" style="width:80px;height:80px;object-fit:contain;border-radius:8px;">
           </div>
           <div class="cart-product-detail">
             <a href="product-detail.html?id=${p.productID}" class="cart-product-name">${p.productName}</a>
@@ -748,7 +730,7 @@ function renderCartSuggestions() {
   grid.innerHTML = products.map(p => `
     <div class="product-card">
       <div class="product-img-wrapper">
-        <img src="${getProductImage(p.productID, p.categoryID)}" alt="${p.productName}" class="product-img" loading="lazy">
+        <img src="${getProductImage(p)}" alt="${p.productName}" class="product-img" loading="lazy">
       </div>
       <div class="product-info">
         <a href="product-detail.html?id=${p.productID}" class="product-name" style="height: 38px;">${p.productName}</a>
@@ -1072,6 +1054,7 @@ function initProfilePage() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  await loadImageMap();
   await initDatabase();
 
   updateCartBadge();

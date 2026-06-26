@@ -170,6 +170,9 @@ public class App {
       }
     }
 
+    // Cập nhật imageUrl cho sản phẩm cũ chưa có ảnh
+    // (đã chuyển sang product-images.html)
+
     if (tableCount("SanPham") > 0) {
       return;
     }
@@ -232,22 +235,26 @@ public class App {
   private static void seedProducts(Connection conn) throws SQLException {
     String sql = "INSERT INTO SanPham (productID, productName, categoryID, brand, priceProduct, originalPrice, quantityProduct, capacity, energySaving, smartFeature, descriptionProduct, rating, reviewsCount, soldCount, isFlashSale, soldFlash, limitFlash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     insertRows(conn, sql, List.of(
-        List.of("SP_MG_01", "Máy giặt Samsung Inverter 10kg", "DM_MG", "Samsung", 8490000, 10990000, 25, "10kg",
-            "5 sao", "Có", "Máy giặt inverter tiết kiệm điện, vận hành êm.", 4.8, 128, 86, true, 35, 80),
-        List.of("SP_MG_02", "Máy giặt LG AI DD 9kg", "DM_MG", "LG", 7690000, 9490000, 18, "9kg", "5 sao", "Có",
-            "Công nghệ AI DD bảo vệ sợi vải.", 4.7, 96, 64, false, 0, 0),
-        List.of("SP_TL_01", "Tủ lạnh Panasonic Inverter 326L", "DM_TL", "Panasonic", 9990000, 12490000, 16, "326L",
-            "5 sao", "Không", "Ngăn đông mềm và làm lạnh nhanh.", 4.9, 142, 73, true, 42, 90),
-        List.of("SP_TL_02", "Tủ lạnh Samsung Bespoke 352L", "DM_TL", "Samsung", 12990000, 15990000, 12, "352L", "5 sao",
-            "Có", "Thiết kế hiện đại, quản lý thông minh.", 4.8, 88, 51, false, 0, 0),
-        List.of("SP_TV_01", "Smart TV Sony 4K 55 inch", "DM_TV", "Sony", 13990000, 17990000, 20, "55 inch", "4 sao",
-            "Có", "Hình ảnh 4K sắc nét, âm thanh sống động.", 4.9, 210, 120, true, 58, 100),
-        List.of("SP_TV_02", "Smart TV LG OLED 48 inch", "DM_TV", "LG", 18990000, 22990000, 10, "48 inch", "4 sao", "Có",
-            "Màn hình OLED, màu đen sâu.", 4.8, 76, 38, false, 0, 0),
-        List.of("SP_ML_01", "Máy lạnh Daikin Inverter 1.5HP", "DM_ML", "Daikin", 10990000, 13490000, 14, "1.5HP",
-            "5 sao", "Không", "Làm lạnh nhanh, tiết kiệm điện.", 4.7, 115, 69, false, 0, 0),
-        List.of("SP_ML_02", "Máy lạnh Panasonic Nanoe X 1HP", "DM_ML", "Panasonic", 9490000, 11990000, 15, "1HP",
-            "5 sao", "Có", "Lọc khí Nanoe X, vận hành bền bỉ.", 4.8, 101, 57, false, 0, 0)));
+        List.of("SP_MG_01", "Máy giặt Samsung Inverter 10kg", "DM_MG", "Samsung", 8490000, 10990000, 25, "10kg", "5 sao", "Có", "Máy giặt inverter tiết kiệm điện, vận hành êm.", 4.8, 128, 86, true, 35, 80),
+        List.of("SP_MG_02", "Máy giặt LG AI DD 9kg", "DM_MG", "LG", 7690000, 9490000, 18, "9kg", "5 sao", "Có", "Công nghệ AI DD bảo vệ sợi vải.", 4.7, 96, 64, false, 0, 0),
+        List.of("SP_MG_03", "Máy giặt Panasonic Inverter 10kg", "DM_MG", "Panasonic", 7290000, 9290000, 20, "10kg", "5 sao", "Không", "Giặt sạch mạnh mẽ, tiết kiệm điện nước.", 4.6, 74, 45, false, 0, 0),
+        List.of("SP_MG_04", "Máy giặt Toshiba Inverter 9kg", "DM_MG", "Toshiba", 6490000, 8490000, 15, "9kg", "4 sao", "Không", "Công nghệ Dual Spray làm sạch hiệu quả.", 4.5, 52, 31, false, 0, 0),
+        List.of("SP_MG_05", "Máy giặt Samsung EcoBubble 12kg", "DM_MG", "Samsung", 9990000, 12490000, 10, "12kg", "5 sao", "Có", "Công nghệ EcoBubble giặt sạch ngay cả nước lạnh.", 4.8, 61, 40, false, 0, 0),
+        List.of("SP_TL_01", "Tủ lạnh Panasonic Inverter 326L", "DM_TL", "Panasonic", 9990000, 12490000, 16, "326L", "5 sao", "Không", "Ngăn đông mềm và làm lạnh nhanh.", 4.9, 142, 73, true, 42, 90),
+        List.of("SP_TL_02", "Tủ lạnh Samsung Bespoke 352L", "DM_TL", "Samsung", 12990000, 15990000, 12, "352L", "5 sao", "Có", "Thiết kế hiện đại, quản lý thông minh.", 4.8, 88, 51, false, 0, 0),
+        List.of("SP_TL_03", "Tủ lạnh LG InstaView 506L", "DM_TL", "LG", 19990000, 24990000, 8, "506L", "5 sao", "Có", "Gõ nhẹ để xem bên trong không cần mở cửa.", 4.9, 63, 29, false, 0, 0),
+        List.of("SP_TL_04", "Tủ lạnh Toshiba Inverter 233L", "DM_TL", "Toshiba", 6990000, 8990000, 20, "233L", "4 sao", "Không", "Làm lạnh nhanh, khử mùi hiệu quả.", 4.5, 47, 28, false, 0, 0),
+        List.of("SP_TL_05", "Tủ lạnh Xiaomi Side By Side 536L", "DM_TL", "Xiaomi", 14990000, 18990000, 9, "536L", "5 sao", "Có", "Điều khiển qua app, màn hình cảm ứng.", 4.7, 55, 22, false, 0, 0),
+        List.of("SP_TV_01", "Smart TV Sony 4K 55 inch", "DM_TV", "Sony", 13990000, 17990000, 20, "55 inch", "4 sao", "Có", "Hình ảnh 4K sắc nét, âm thanh sống động.", 4.9, 210, 120, true, 58, 100),
+        List.of("SP_TV_02", "Smart TV LG OLED 48 inch", "DM_TV", "LG", 18990000, 22990000, 10, "48 inch", "4 sao", "Có", "Màn hình OLED, màu đen sâu.", 4.8, 76, 38, false, 0, 0),
+        List.of("SP_TV_03", "Smart TV Samsung QLED 65 inch", "DM_TV", "Samsung", 22990000, 28990000, 7, "65 inch", "4 sao", "Có", "Công nghệ QLED rực rỡ, độ sáng cao.", 4.8, 93, 44, false, 0, 0),
+        List.of("SP_TV_04", "Smart TV Xiaomi 43 inch", "DM_TV", "Xiaomi", 5990000, 7990000, 25, "43 inch", "3 sao", "Có", "Giá tốt, tích hợp Android TV đầy đủ.", 4.5, 134, 89, false, 0, 0),
+        List.of("SP_TV_05", "Smart TV Sony Bravia 75 inch", "DM_TV", "Sony", 34990000, 42990000, 5, "75 inch", "4 sao", "Có", "Màn hình siêu lớn, trải nghiệm rạp phim tại nhà.", 4.9, 48, 17, false, 0, 0),
+        List.of("SP_ML_01", "Máy lạnh Daikin Inverter 1.5HP", "DM_ML", "Daikin", 10990000, 13490000, 14, "1.5HP", "5 sao", "Không", "Làm lạnh nhanh, tiết kiệm điện.", 4.7, 115, 69, false, 0, 0),
+        List.of("SP_ML_02", "Máy lạnh Panasonic Nanoe X 1HP", "DM_ML", "Panasonic", 9490000, 11990000, 15, "1HP", "5 sao", "Có", "Lọc khí Nanoe X, vận hành bền bỉ.", 4.8, 101, 57, false, 0, 0),
+        List.of("SP_ML_03", "Máy lạnh LG Dual Cool 2HP", "DM_ML", "LG", 14990000, 18490000, 11, "2HP", "5 sao", "Có", "Công nghệ Dual Cool làm lạnh 2 chiều.", 4.7, 82, 48, false, 0, 0),
+        List.of("SP_ML_04", "Máy lạnh Samsung WindFree 1HP", "DM_ML", "Samsung", 9990000, 12490000, 13, "1HP", "5 sao", "Có", "Công nghệ WindFree không gió lạnh trực tiếp.", 4.8, 97, 58, false, 0, 0),
+        List.of("SP_ML_05", "Máy lạnh Toshiba Inverter 1.5HP", "DM_ML", "Toshiba", 8490000, 10990000, 16, "1.5HP", "5 sao", "Không", "Bền bỉ, tiết kiệm điện vượt trội.", 4.6, 68, 41, false, 0, 0)));
   }
 
   private static void insertRows(Connection conn, String sql, List<List<Object>> rows) throws SQLException {
