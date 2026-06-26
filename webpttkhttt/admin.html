@@ -1,17 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - ElectroMax</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
   <header class="header">
@@ -25,49 +22,33 @@
         </div>
       </div>
     </div>
-
+    
     <div class="header-main">
       <div class="container">
         <a href="index.html" class="logo">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-            stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
           Electro<span>Max</span>
         </a>
-
+        
         <form class="search-bar" id="header-search-form">
           <input type="text" placeholder="Tìm kiếm tivi, tủ lạnh, máy giặt..." id="search-input" required>
           <button type="submit">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </button>
         </form>
-
+        
         <div class="header-actions">
           <a href="profile.html" class="header-btn" title="Hồ sơ thành viên">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           </a>
           <a href="cart.html" class="header-btn" title="Giỏ hàng">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <circle cx="9" cy="21" r="1"></circle>
-              <circle cx="20" cy="21" r="1"></circle>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
             <span class="badge" id="cart-badge">0</span>
           </a>
         </div>
       </div>
     </div>
-
+    
     <nav class="nav-bar">
       <div class="container">
         <ul class="nav-menu">
@@ -80,7 +61,7 @@
     </nav>
   </header>
 
-
+  
   <section class="info-hero">
     <div class="container">
       <h1>Admin Dashboard</h1>
@@ -89,74 +70,62 @@
   </section>
   <main class="info-section">
     <div class="container">
-
-      <div class="admin-layout">
-        <aside class="admin-sidebar">
-          <h2>ElectroMax Admin</h2>
-          <div class="admin-menu-item active">Order List</div>
-          <div class="admin-menu-item">Customers</div>
-          <div class="admin-menu-item">Products</div>
-          <div class="admin-menu-item">Reports</div>
-        </aside>
-        <section class="admin-content">
-          <div class="admin-stats">
-            <div class="admin-stat"><span>Pending</span><strong>3</strong></div>
-            <div class="admin-stat"><span>Confirmed</span><strong>12</strong></div>
-            <div class="admin-stat"><span>Canceled</span><strong>1</strong></div>
-            <div class="admin-stat"><span>Completed</span><strong>28</strong></div>
-          </div>
-          <div class="info-card">
-            <h3>Order Management · Welcome, Sales Staff!</h3>
-            <p>Danh sách đơn hàng đang chờ xử lý.</p>
-          </div>
-          <div class="admin-order">
-            <div><b>Order ID: #12345</b> <span class="admin-status">Pending</span>
-              <p>Customer: Kiên Đặng · Price: 125.000đ</p>
-            </div>
-            <div><button class="btn btn-blue">Confirm Order</button> <button class="btn btn-danger">Cancel
-                Order</button></div>
-          </div>
-          <div class="admin-order">
-            <div><b>Order ID: #12346</b> <span class="admin-status">Pending</span>
-              <p>Customer: Tuấn Anh · Price: 50.000đ</p>
-            </div>
-            <div><button class="btn btn-blue">Confirm Order</button> <button class="btn btn-danger">Cancel
-                Order</button></div>
-          </div>
-          <div class="admin-order">
-            <div><b>Order ID: #12347</b> <span class="admin-status">Pending</span>
-              <p>Customer: Vĩ · Price: 36.000đ</p>
-            </div>
-            <div><button class="btn btn-blue">Confirm Order</button> <button class="btn btn-danger">Cancel
-                Order</button></div>
-          </div>
-        </section>
+      
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h2>ElectroMax Admin</h2>
+    <div class="admin-menu-group">
+      <div class="admin-menu-item admin-menu-parent active">Order Status</div>
+      <div class="admin-status-submenu">
+        <div class="admin-status-option active" data-status="pending">Chờ xác nhận</div>
+        <div class="admin-status-option" data-status="confirmed">Đã xác nhận</div>
+        <div class="admin-status-option" data-status="canceled">Đã hủy</div>
       </div>
     </div>
+    <div class="admin-menu-item">Customers</div>
+    <div class="admin-menu-item">Products</div>
+    <div class="admin-menu-item">Reports</div>
+  </aside>
+  <section class="admin-content">
+    <div class="admin-stats">
+      <div class="admin-stat"><span>Chờ xác nhận</span><strong id="stat-pending">0</strong></div>
+      <div class="admin-stat"><span>Đã xác nhận</span><strong id="stat-confirmed">0</strong></div>
+      <div class="admin-stat"><span>Đã hủy</span><strong id="stat-canceled">0</strong></div>
+    </div>
+    <div class="info-card"><h3 id="order-section-title">Chờ xác nhận</h3><p id="order-section-desc">Danh sách đơn hàng đang chờ xác nhận.</p></div>
+    <div id="admin-order-list">
+      <div class="admin-order" data-status="pending"><div><b>Order ID: #12345</b> <span class="admin-status">Chờ xác nhận</span><p>Customer: Kiên Đặng · Price: 125.000đ</p></div><div class="admin-order-actions"><button type="button" class="btn btn-blue" data-action="confirm">Xác nhận đơn</button> <button type="button" class="btn btn-danger" data-action="cancel">Hủy đơn</button></div></div>
+      <div class="admin-order" data-status="pending"><div><b>Order ID: #12346</b> <span class="admin-status">Chờ xác nhận</span><p>Customer: Tuấn Anh · Price: 50.000đ</p></div><div class="admin-order-actions"><button type="button" class="btn btn-blue" data-action="confirm">Xác nhận đơn</button> <button type="button" class="btn btn-danger" data-action="cancel">Hủy đơn</button></div></div>
+      <div class="admin-order" data-status="pending"><div><b>Order ID: #12347</b> <span class="admin-status">Chờ xác nhận</span><p>Customer: Vĩ · Price: 36.000đ</p></div><div class="admin-order-actions"><button type="button" class="btn btn-blue" data-action="confirm">Xác nhận đơn</button> <button type="button" class="btn btn-danger" data-action="cancel">Hủy đơn</button></div></div>
+      <p id="admin-empty-state" style="display:none;color:var(--gray);text-align:center;padding:32px;">Chưa có đơn hàng ở trạng thái này.</p>
+    </div>
+  </section>
+</div>
+    </div>
   </main>
-  <footer class="footer">
+<footer class="footer">
     <div class="container">
       <div class="footer-grid">
         <div class="footer-col">
           <h3>Về Chúng Tôi</h3>
           <ul class="footer-links">
             <li><a href="about.html" class="footer-link">Giới thiệu ElectroMax</a></li>
-            <li><a href="" class="footer-link">Tuyển dụng mới nhất</a></li>
-            <li><a href="" class="footer-link">Chính sách bảo mật</a></li>
+            <li><a href="recruitment.html" class="footer-link">Tuyển dụng mới nhất</a></li>
+            <li><a href="privacy.html" class="footer-link">Chính sách bảo mật</a></li>
             <li><a href="terms.html" class="footer-link">Điều khoản mua sắm</a></li>
           </ul>
         </div>
-
+        
         <div class="footer-col">
           <h3>Hỗ Trợ Khách Hàng</h3>
           <ul class="footer-links">
-            <li><a href="" class="footer-link">Hướng dẫn mua hàng online</a></li>
-            <li><a href="" class="footer-link">Chính sách giao nhận</a></li>
-            <li><a href="" class="footer-link">Chính sách đổi trả hàng</a></li>
-            <li><a href="" class="footer-link">Trung tâm bảo hành chính hãng</a></li>
+            <li><a href="shopping-guide.html" class="footer-link">Hướng dẫn mua hàng online</a></li>
+            <li><a href="shipping-policy.html" class="footer-link">Chính sách giao nhận</a></li>
+            <li><a href="return-policy.html" class="footer-link">Chính sách đổi trả hàng</a></li>
+            <li><a href="warranty-center.html" class="footer-link">Trung tâm bảo hành chính hãng</a></li>
           </ul>
         </div>
-
+        
         <div class="footer-col">
           <h3>Liên Hệ Với Chúng Tôi</h3>
           <ul class="footer-links">
@@ -166,22 +135,114 @@
             <li class="footer-link">Địa chỉ: 125 Hai Bà Trưng, Quận 1, TPHCM</li>
           </ul>
         </div>
-
-
+        
+        <div class="footer-col footer-newsletter">
+          <h3>Đăng Ký Nhận Tin Khuyến Mãi</h3>
+          <p>Nhận ngay voucher giảm giá 100K cho đơn hàng đầu tiên của thành viên mới đăng ký.</p>
+          <form class="footer-form" onsubmit="event.preventDefault(); showToast('Cảm ơn bạn đã đăng ký nhận bản tin khuyến mãi!');">
+            <input type="email" placeholder="Email của bạn..." required>
+            <button type="submit" class="btn btn-blue" style="padding: 12px; border-radius: 8px;">Đăng ký</button>
+          </form>
+        </div>
       </div>
-
+      
       <div class="footer-bottom">
         <div>© 2026 ElectroMax. Tất cả quyền được bảo lưu. Thiết kế giao diện premium.</div>
         <div class="footer-payments">
           <div class="footer-payment-icon">COD</div>
-          <div class="footer-payment-icon">Bank</div>
+          <div class="footer-payment-icon">VISA</div>
+          <div class="footer-payment-icon">MOMO</div>
+          <div class="footer-payment-icon">ZALOPAY</div>
+          <div class="footer-payment-icon">VNPAY</div>
         </div>
       </div>
     </div>
   </footer>
 
-  <script src="images.js"></script>
+  <script>
+    const STATUS_LABELS = {
+      pending: "Chờ xác nhận",
+      confirmed: "Đã xác nhận",
+      canceled: "Đã hủy"
+    };
+
+    const STATUS_DESCRIPTIONS = {
+      pending: "Danh sách đơn hàng đang chờ xác nhận.",
+      confirmed: "Danh sách đơn hàng đã được xác nhận.",
+      canceled: "Danh sách đơn hàng đã bị hủy."
+    };
+
+    let currentStatus = "pending";
+
+    function setOrderStatus(order, status) {
+      order.dataset.status = status;
+      const badge = order.querySelector(".admin-status");
+      const actions = order.querySelector(".admin-order-actions");
+
+      if (badge) badge.textContent = STATUS_LABELS[status];
+      if (!actions) return;
+
+      if (status === "pending") {
+        actions.innerHTML = '<button type="button" class="btn btn-blue" data-action="confirm">Xác nhận đơn</button> <button type="button" class="btn btn-danger" data-action="cancel">Hủy đơn</button>';
+      } else if (status === "confirmed") {
+        actions.innerHTML = '<button type="button" class="btn btn-danger" data-action="cancel">Hủy đơn</button>';
+      } else {
+        actions.innerHTML = '<span style="color:var(--danger);font-weight:700;">Đã hủy</span>';
+      }
+    }
+
+    function updateAdminView() {
+      const orders = [...document.querySelectorAll(".admin-order[data-status]")];
+      const visibleOrders = orders.filter(order => order.dataset.status === currentStatus);
+
+      document.getElementById("stat-pending").textContent = orders.filter(order => order.dataset.status === "pending").length;
+      document.getElementById("stat-confirmed").textContent = orders.filter(order => order.dataset.status === "confirmed").length;
+      document.getElementById("stat-canceled").textContent = orders.filter(order => order.dataset.status === "canceled").length;
+      document.getElementById("order-section-title").textContent = STATUS_LABELS[currentStatus];
+      document.getElementById("order-section-desc").textContent = STATUS_DESCRIPTIONS[currentStatus];
+
+      orders.forEach(order => {
+        order.style.display = order.dataset.status === currentStatus ? "" : "none";
+      });
+
+      const emptyState = document.getElementById("admin-empty-state");
+      if (emptyState) emptyState.style.display = visibleOrders.length ? "none" : "block";
+
+      document.querySelectorAll(".admin-status-option").forEach(option => {
+        option.classList.toggle("active", option.dataset.status === currentStatus);
+      });
+    }
+
+    document.querySelector(".admin-menu-parent").addEventListener("click", event => {
+      event.stopPropagation();
+      document.querySelector(".admin-menu-group").classList.toggle("open");
+    });
+
+    document.querySelectorAll(".admin-status-option").forEach(option => {
+      option.addEventListener("click", event => {
+        event.stopPropagation();
+        currentStatus = option.dataset.status;
+        document.querySelector(".admin-menu-group").classList.remove("open");
+        updateAdminView();
+      });
+    });
+
+    document.getElementById("admin-order-list").addEventListener("click", event => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+
+      const order = button.closest(".admin-order");
+      setOrderStatus(order, button.dataset.action === "confirm" ? "confirmed" : "canceled");
+      currentStatus = order.dataset.status;
+      updateAdminView();
+    });
+
+    document.addEventListener("click", () => {
+      document.querySelector(".admin-menu-group").classList.remove("open");
+    });
+
+    updateAdminView();
+  </script>
   <script src="script.js"></script>
 </body>
-
 </html>
