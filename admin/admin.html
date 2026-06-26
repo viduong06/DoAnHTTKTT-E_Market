@@ -7,7 +7,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="style.css?v=order-flyout-2">
+  <style>
+    .admin-menu-group{position:relative}
+    .admin-menu-parent{position:relative}
+    .admin-menu-parent::after{content:"›";position:absolute;right:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.55);font-size:1.4rem;line-height:1}
+    .admin-status-submenu{position:absolute;left:calc(100% + 10px);top:0;z-index:20;width:210px;opacity:0;visibility:hidden;border:1px solid rgba(96,165,250,.42);border-radius:10px;background:#1f2937;box-shadow:0 18px 40px rgba(0,0,0,.34);padding:10px;transform:translateX(-6px);transition:opacity .16s ease,transform .16s ease,visibility .16s ease}
+    .admin-status-submenu::before{content:"";position:absolute;left:-11px;top:0;width:12px;height:100%}
+    .admin-menu-group:hover .admin-status-submenu,.admin-menu-group:focus-within .admin-status-submenu{opacity:1;visibility:visible;transform:translateX(0)}
+    .admin-status-option{border-radius:7px;color:rgba(255,255,255,.88);cursor:pointer;font-size:.9rem;font-weight:700;margin:2px 0;padding:10px 8px}
+    .admin-status-option:hover,.admin-status-option.active{background:rgba(96,165,250,.16);color:var(--white)}
+  </style>
 </head>
 <body>
 
@@ -24,7 +34,14 @@
 
         <aside class="admin-sidebar">
           <h2>ElectroMax Admin</h2>
-          <div class="admin-menu-item active">Order List</div>
+          <div class="admin-menu-group">
+            <div class="admin-menu-item admin-menu-parent">Order Status</div>
+            <div class="admin-status-submenu">
+              <div class="admin-status-option active" data-status="Chờ xác nhận">Pending Confirmation</div>
+              <div class="admin-status-option" data-status="Đã xác nhận">Confirmed</div>
+              <div class="admin-status-option" data-status="Đã hủy">Canceled</div>
+            </div>
+          </div>
           <div class="admin-menu-item">Customers</div>
           <div class="admin-menu-item">Products</div>
           <div class="admin-menu-item">Reports</div>
@@ -35,12 +52,11 @@
             <div class="admin-stat"><span>Chờ xác nhận</span><strong id="stat-pending">0</strong></div>
             <div class="admin-stat"><span>Đã xác nhận</span><strong id="stat-confirmed">0</strong></div>
             <div class="admin-stat"><span>Đã hủy</span><strong id="stat-canceled">0</strong></div>
-            <div class="admin-stat"><span>Hoàn thành</span><strong id="stat-completed">0</strong></div>
           </div>
 
           <div class="info-card">
-            <h3>Order Management · Welcome, Sales Staff!</h3>
-            <p>Danh sách đơn hàng đang chờ xử lý.</p>
+            <h3 id="order-section-title">Chờ xác nhận</h3>
+            <p id="order-section-desc">Danh sách đơn hàng đang chờ xác nhận.</p>
           </div>
 
           <div id="admin-order-list">
@@ -62,6 +78,30 @@
 
   <script>
     const API_BASE = "http://localhost:8080";
+    let currentStatusFilter = "Chờ xác nhận";
+    let latestOrders = [];
+    let latestSource = "local";
+
+    const STATUS_META = {
+      "Chờ xác nhận": {
+        statId: "stat-pending",
+        navId: "nav-pending",
+        empty: "Chưa có đơn hàng chờ xác nhận.",
+        desc: "Danh sách đơn hàng đang chờ xác nhận."
+      },
+      "Đã xác nhận": {
+        statId: "stat-confirmed",
+        navId: "nav-confirmed",
+        empty: "Chưa có đơn hàng đã xác nhận.",
+        desc: "Danh sách đơn hàng đã được xác nhận."
+      },
+      "Đã hủy": {
+        statId: "stat-canceled",
+        navId: "nav-canceled",
+        empty: "Chưa có đơn hàng đã hủy.",
+        desc: "Danh sách đơn hàng đã bị hủy."
+      }
+    };
 
     function formatPrice(n) {
       return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(n);
@@ -77,6 +117,11 @@
         const res = await fetch(`${API_BASE}/api/orders`);
         if (!res.ok) throw new Error("API lỗi");
         const orders = await res.json();
+        const localOrders = JSON.parse(localStorage.getItem("DonHang") || "[]").reverse();
+        if ((!orders || orders.length === 0) && localOrders.length > 0) {
+          renderOrders(localOrders, "local");
+          return;
+        }
         renderOrders(orders, "db");
       } catch (err) {
         // Fallback: đọc từ localStorage nếu không có backend
@@ -86,29 +131,43 @@
     }
 
     function renderOrders(orders, source) {
+      latestOrders = Array.isArray(orders) ? orders : [];
+      latestSource = source || latestSource;
       const list = document.getElementById("admin-order-list");
       const srcBadge = document.getElementById("data-source");
+      const title = document.getElementById("order-section-title");
+      const desc = document.getElementById("order-section-desc");
       if (srcBadge) {
         srcBadge.textContent = source === "db" ? "Nguồn: SQL Server" : "Nguồn: localStorage (backend offline)";
         srcBadge.style.color = source === "db" ? "var(--success, green)" : "var(--danger, red)";
       }
 
       // stats
-      document.getElementById("stat-pending").textContent   = orders.filter(o => o.status === "Chờ xác nhận").length;
-      document.getElementById("stat-confirmed").textContent = orders.filter(o => o.status === "Đã xác nhận").length;
-      document.getElementById("stat-canceled").textContent  = orders.filter(o => o.status === "Đã hủy").length;
-      document.getElementById("stat-completed").textContent = orders.filter(o => o.status === "Hoàn thành").length;
+      Object.entries(STATUS_META).forEach(([status, meta]) => {
+        const count = latestOrders.filter(o => o.status === status).length;
+        document.getElementById(meta.statId).textContent = count;
+      });
 
-      if (orders.length === 0) {
-        list.innerHTML = '<p style="color:var(--gray);text-align:center;padding:32px;">Chưa có đơn hàng nào.</p>';
+      document.querySelectorAll(".admin-status-option[data-status]").forEach(item => {
+        item.classList.toggle("active", item.dataset.status === currentStatusFilter);
+      });
+
+      const meta = STATUS_META[currentStatusFilter];
+      title.textContent = currentStatusFilter;
+      desc.textContent = meta.desc;
+
+      const visibleOrders = latestOrders.filter(order => order.status === currentStatusFilter);
+
+      if (visibleOrders.length === 0) {
+        list.innerHTML = `<p style="color:var(--gray);text-align:center;padding:32px;">${meta.empty}</p>`;
         return;
       }
 
-      list.innerHTML = orders.map(order => {
+      list.innerHTML = visibleOrders.map(order => {
         const customer  = getCustomerName(order.shippingAddress);
         const date      = new Date(order.orderDate).toLocaleDateString("vi-VN");
         const isCanceled   = order.status === "Đã hủy";
-        const isConfirmed  = order.status === "Đã xác nhận" || order.status === "Hoàn thành";
+        const isConfirmed  = order.status === "Đã xác nhận";
 
         return `
           <div class="admin-order" id="order-${order.orderId}">
@@ -146,6 +205,7 @@
           localStorage.setItem("DonHang", JSON.stringify(orders));
         }
       }
+      currentStatusFilter = status;
       loadOrders(); // reload lại danh sách
     }
 
@@ -173,6 +233,13 @@
     }
 
     // Load lần đầu
+    document.querySelectorAll(".admin-status-option[data-status]").forEach(item => {
+      item.addEventListener("click", () => {
+        currentStatusFilter = item.dataset.status;
+        renderOrders(latestOrders, latestSource);
+      });
+    });
+
     loadOrders();
 
     // Polling 5 giây
