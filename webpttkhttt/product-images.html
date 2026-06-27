@@ -1,46 +1,154 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"></head>
+
+<head>
+  <meta charset="UTF-8">
+</head>
+
 <body>
-<!--
+  <!--
   File này chứa link ảnh cho từng sản phẩm.
   Mỗi thẻ <img> có id = productID tương ứng.
   Script.js sẽ đọc src từ file này qua fetch.
 -->
 
-<!-- Máy giặt -->
-<img id="SP_MG_01" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtW-CkgiZHTREp6b9TWoOalEPDsqc0kz9Wgi8u6FSiKQ&s=10" alt="Máy giặt Samsung Inverter 10kg">
-<img id="SP_MG_02" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjwuZxeHXek4FrsAfDUmmUL6zxrqYMEXFjSXAL3ca5jQ&s=10" alt="Máy giặt LG AI DD 9kg">
-<img id="SP_MG_03" src="https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=300&fit=crop&sat=-50" alt="Máy giặt Panasonic Inverter 10kg">
-<img id="SP_MG_04" src="https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcRlBhKqLwdW-M_Y5EQgCfuGQxxlDdmmN2ys5lTo80oyDcL_PZ5x9zAUlFGeplEF-qo9Xdr3FxqFQHhNIrGLKbEuZfZL1BbPE2jkLVIeYkMjYB5j2zj2ChNf3NSvrFSmHpnLHaCyVhv8wMk&usqp=CAc" alt="Máy giặt Toshiba Inverter 9kg">
-<img id="SP_MG_05" src="https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=300&fit=crop&hue=200" alt="Máy giặt Samsung EcoBubble 12kg">
+  <!-- Máy giặt -->
+  <img id="SP_MG_01"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTtW-CkgiZHTREp6b9TWoOalEPDsqc0kz9Wgi8u6FSiKQ&s=10"
+    alt="Máy giặt Samsung Inverter 10kg">
+  <img id="SP_MG_02"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjwuZxeHXek4FrsAfDUmmUL6zxrqYMEXFjSXAL3ca5jQ&s=10"
+    alt="Máy giặt LG AI DD 9kg">
+  <img id="SP_MG_03" src="https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=300&fit=crop&sat=-50"
+    alt="Máy giặt Panasonic Inverter 10kg">
+  <img id="SP_MG_04"
+    src="https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcRlBhKqLwdW-M_Y5EQgCfuGQxxlDdmmN2ys5lTo80oyDcL_PZ5x9zAUlFGeplEF-qo9Xdr3FxqFQHhNIrGLKbEuZfZL1BbPE2jkLVIeYkMjYB5j2zj2ChNf3NSvrFSmHpnLHaCyVhv8wMk&usqp=CAc"
+    alt="Máy giặt Toshiba Inverter 9kg">
+  <img id="SP_MG_05" src="https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=300&fit=crop&hue=200"
+    alt="Máy giặt Samsung EcoBubble 12kg">
 
-<!-- Tủ lạnh -->
-<img id="SP_TL_01" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuD0yCki0slDMDfBMaiSdEqGGZXUqrc4Bc8RSLdPBAcA&s=10" alt="Tủ lạnh Panasonic Inverter 326L">
-<img id="SP_TL_02" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3gcDuCR4eK5Wgv7t57UzDdqDIS-BITZX7yHxwjiwmUA&s=10" alt="Tủ lạnh Samsung Bespoke 352L">
-<img id="SP_TL_03" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrbTMZHvPYlk6DjFo7l6i0UXNdbWKaslIpqmrju2pqyQ&s=10" alt="Tủ lạnh LG InstaView 506L">
-<img id="SP_TL_04" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcReOFEopVLCi11--w95AA5fSU4z7hLYO_3n0kT5-Oo3UA&s=10" alt="Tủ lạnh Toshiba Inverter 233L">
-<img id="SP_TL_05" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdwhXjPzvIxcQxCJC_QPBW_Lf_0kWAFgrokpIb3X6Nw&s=10" alt="Tủ lạnh Xiaomi Side By Side 536L">
+  <!-- Tủ lạnh -->
+  <img id="SP_TL_01"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuD0yCki0slDMDfBMaiSdEqGGZXUqrc4Bc8RSLdPBAcA&s=10"
+    alt="Tủ lạnh Panasonic Inverter 326L">
+  <img id="SP_TL_02"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3gcDuCR4eK5Wgv7t57UzDdqDIS-BITZX7yHxwjiwmUA&s=10"
+    alt="Tủ lạnh Samsung Bespoke 352L">
+  <img id="SP_TL_03"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrbTMZHvPYlk6DjFo7l6i0UXNdbWKaslIpqmrju2pqyQ&s=10"
+    alt="Tủ lạnh LG InstaView 506L">
+  <img id="SP_TL_04"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcReOFEopVLCi11--w95AA5fSU4z7hLYO_3n0kT5-Oo3UA&s=10"
+    alt="Tủ lạnh Toshiba Inverter 233L">
+  <img id="SP_TL_05"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDdwhXjPzvIxcQxCJC_QPBW_Lf_0kWAFgrokpIb3X6Nw&s=10"
+    alt="Tủ lạnh Xiaomi Side By Side 536L">
 
-<!-- Tivi -->
-<img id="SP_TV_01" src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=300&fit=crop" alt="Smart TV Sony 4K 55 inch">
-<img id="SP_TV_02" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDX8KBJLkqi0_v4xOl-M7-WJSRV00_yqFSYCBWA6O2aw&s=10" alt="Smart TV LG OLED 48 inch">
-<img id="SP_TV_03" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNGoZWLOrfENPSkissEK5iD7C3lLXfSfkjQSsniJ_GmQ&s=10" alt="Smart TV Samsung QLED 65 inch">
-<img id="SP_TV_04" src="https://images.unsplash.com/photo-1461151304267-38535e780c79?w=400&h=300&fit=crop&sat=-40" alt="Smart TV Xiaomi 43 inch">
-<img id="SP_TV_05" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-HulsvpCcOVNetq3IzNb3P7cZkYy6X63gKcz8N5UegA&s=10" alt="Smart TV Sony Bravia 75 inch">
+  <!-- Tivi -->
+  <img id="SP_TV_01" src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=300&fit=crop"
+    alt="Smart TV Sony 4K 55 inch">
+  <img id="SP_TV_02"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDX8KBJLkqi0_v4xOl-M7-WJSRV00_yqFSYCBWA6O2aw&s=10"
+    alt="Smart TV LG OLED 48 inch">
+  <img id="SP_TV_03"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNGoZWLOrfENPSkissEK5iD7C3lLXfSfkjQSsniJ_GmQ&s=10"
+    alt="Smart TV Samsung QLED 65 inch">
+  <img id="SP_TV_04" src="https://images.unsplash.com/photo-1461151304267-38535e780c79?w=400&h=300&fit=crop&sat=-40"
+    alt="Smart TV Xiaomi 43 inch">
+  <img id="SP_TV_05"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-HulsvpCcOVNetq3IzNb3P7cZkYy6X63gKcz8N5UegA&s=10"
+    alt="Smart TV Sony Bravia 75 inch">
 
-<!-- Máy lạnh -->
-<img id="SP_ML_01" src="https://shopdieuhoa.com/wp-content/uploads/2023/09/FTKY-2.jpg" alt="Máy lạnh Daikin Inverter 1.5HP">
-<img id="SP_ML_02" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRh75vKhOf_EhEcnuAhMHGz1OePNm9C7ZlfUY0mLp4x-g&s" alt="Máy lạnh Panasonic Nanoe X 1HP">
-<img id="SP_ML_03" src="https://bizweb.dktcdn.net/100/444/251/products/may-lanh-lg-inverter-1-5-hp-iec12g2-2-465a2369-2ebf-4eb0-a4fd-f2dbb5eec437.jpg?v=1773301359683" alt="Máy lạnh LG Dual Cool 2HP">
-<img id="SP_ML_04" src="https://bizweb.dktcdn.net/100/439/998/products/dieu-hoa-samsung-wind-free-inverter-1-hp-ar10cyfaawknsv-1.jpg?v=1742795758290" alt="Máy lạnh Samsung WindFree 1HP">
-<img id="SP_ML_05" src="https://bizweb.dktcdn.net/thumb/1024x1024/100/053/571/products/tsb3-7c91dbfb-d5d0-47e8-ae98-6ab9782f9e01-2f1bd357-9e45-4459-b05e-21aa9d062d52-7cec2014-c3d3-4aaa-a7a1-464654f7efb7-f88fb98d-2312-47ac-941a-073438a60a14.jpg?v=1771846856720" alt="Máy lạnh Toshiba Inverter 1.5HP">
+  <!-- Máy lạnh -->
+  <img id="SP_ML_01" src="https://shopdieuhoa.com/wp-content/uploads/2023/09/FTKY-2.jpg"
+    alt="Máy lạnh Daikin Inverter 1.5HP">
+  <img id="SP_ML_02"
+    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRh75vKhOf_EhEcnuAhMHGz1OePNm9C7ZlfUY0mLp4x-g&s"
+    alt="Máy lạnh Panasonic Nanoe X 1HP">
+  <img id="SP_ML_03"
+    src="https://bizweb.dktcdn.net/100/444/251/products/may-lanh-lg-inverter-1-5-hp-iec12g2-2-465a2369-2ebf-4eb0-a4fd-f2dbb5eec437.jpg?v=1773301359683"
+    alt="Máy lạnh LG Dual Cool 2HP">
+  <img id="SP_ML_04"
+    src="https://bizweb.dktcdn.net/100/439/998/products/dieu-hoa-samsung-wind-free-inverter-1-hp-ar10cyfaawknsv-1.jpg?v=1742795758290"
+    alt="Máy lạnh Samsung WindFree 1HP">
+  <img id="SP_ML_04_2"
+    src="https://cdn.tgdd.vn/Products/Images/2002/304224/may-lanh-samsung-inverter-1-hp-ar10cyecawknsv6-700x467.jpg"
+    alt="Máy lạnh Samsung WindFree 1HP">
+  <img id="SP_ML_05"
+    src="https://bizweb.dktcdn.net/thumb/1024x1024/100/053/571/products/tsb3-7c91dbfb-d5d0-47e8-ae98-6ab9782f9e01-2f1bd357-9e45-4459-b05e-21aa9d062d52-7cec2014-c3d3-4aaa-a7a1-464654f7efb7-f88fb98d-2312-47ac-941a-073438a60a14.jpg?v=1771846856720"
+    alt="Máy lạnh Toshiba Inverter 1.5HP">
 
-<!-- Fallback theo danh mục -->
-<img id="DM_MG" src="https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=300&fit=crop" alt="Máy giặt">
-<img id="DM_TL" src="https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=400&h=300&fit=crop" alt="Tủ lạnh">
-<img id="DM_TV" src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=300&fit=crop" alt="Tivi">
-<img id="DM_ML" src="https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&h=300&fit=crop" alt="Máy lạnh">
+  <!-- Nồi cơm điện -->
+  <img id="SP_NCD_01"
+    src="https://cdnv2.tgdd.vn/mwg-static/dmx/Products/Images/1922/361770/noi-com-nap-gai-kangaro-3-lit-kgrc30m5g-1-639056236486331383-700x467.jpg"
+    alt="Nồi cơm nắp gài Kangaro 3 lít KGRC30M5G">
+  <img id="SP_NCD_01_2"
+    src="https://cdnv2.tgdd.vn/mwg-static/dmx/Products/Images/1922/361770/noi-com-nap-gai-kangaro-3-lit-kgrc30m5g-4-639056236514459366-700x467.jpg">
+  <img id="SP_NCD_01_3"
+    src="https://cdnv2.tgdd.vn/mwg-static/dmx/Products/Images/1922/361770/noi-com-nap-gai-kangaro-3-lit-kgrc30m5g-5-639056236521534585-700x467.jpg">
+  <img id="SP_NCD_01_4"
+    src="https://cdnv2.tgdd.vn/mwg-static/dmx/Products/Images/1922/361770/noi-com-nap-gai-kangaro-3-lit-kgrc30m5g-7-639056236538186542-700x467.jpg">
+  <img id="SP_NCD_01_5"
+    src="https://cdnv2.tgdd.vn/mwg-static/dmx/Products/Images/1922/361770/noi-com-nap-gai-kangaro-3-lit-kgrc30m5g-11-639056236572307451-700x467.jpg">
+
+  <!-- Lò vi sóng -->
+  <img id="SP_LVS_01" src="https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-m3vixbwm131kb6.webp"
+    alt="Lò vi sóng Sharp">
+  <img id="SP_LVS_01_2" src="https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-m3vixbwlzoh4e6.webp"
+    alt="Lò vi sóng Sharp">
+  <img id="SP_LVS_01_3" src="https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-m3vixbwm5aqw05.webp"
+    alt="Lò vi sóng Sharp">
+
+  <!-- Máy hút bụi -->
+  <img id="SP_MHB_01"
+    src="https://www.electrolux.vn/globalassets/d2c-vn/whats-in-the-box/z1220/z1220-angr-1500x1500.jpg?width=464"
+    alt="Máy hút bụi Electrolux">
+  <img id="SP_MHB_01_2"
+    src="https://www.electrolux.vn/globalassets/appliances/vacuum/z1220/z1220-acc-1500x1500.png?width=464"
+    alt="Máy hút bụi Electrolux">
+  <img id="SP_MHB_01_3"
+    src="https://www.electrolux.vn/globalassets/d2c-vn/whats-in-the-box/z1220/z1220-insit-tal-1500x1500-min.jpg?width=464"
+    alt="Máy hút bụi Electrolux">
+
+  <!-- Máy lọc nước -->
+  <img id="SP_MLN_01" src="https://loctongchungcu.com/wp-content/uploads/2024/07/may-loc-nuoc-karofi-kaq-u05g.webp"
+    alt="Máy lọc nước Karofi">
+
+  <!-- Đồ dùng bếp -->
+  <img id="SP_DDB_01" src="https://sunhouse.com.vn/pic/thumb/large/product/bo-noi-inox-3-day-sunhouse-sh335-002.jpg"
+    alt="Bộ nồi Sunhouse">
+  <img id="SP_DDB_01_2" src="https://sunhouse.com.vn/pic/thumb/large/product/bo-noi-inox-3-day-sunhouse-sh335-004.jpg"
+    alt="Bộ nồi Sunhouse">
+  <img id="SP_DDB_01_3" src="https://sunhouse.com.vn/pic/product/bo-noi-inox-3-day-sunhouse-sh335-007.jpg"
+    alt="Bộ nồi Sunhouse">
+
+  <!-- Nhà thông minh -->
+  <img id="SP_NTM_01"
+    src="https://cannhacongnghe.com/wp-content/uploads/2022/04/White-Beige-Illustrated-Graduation-Celebration-Invitation-Card-30.png"
+    alt="Khóa thông minh Xiaomi">
+  <img id="SP_NTM_01_2"
+    src="https://cannhacongnghe.com/wp-content/uploads/2022/04/White-Beige-Illustrated-Graduation-Celebration-Invitation-Card-31.png"
+    alt="Khóa thông minh Xiaomi">
+
+  <!-- Fallback theo danh mục -->
+  <img id="DM_MG" src="https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&h=300&fit=crop"
+    alt="Máy giặt">
+  <img id="DM_TL" src="https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=400&h=300&fit=crop" alt="Tủ lạnh">
+  <img id="DM_TV" src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=300&fit=crop" alt="Tivi">
+  <img id="DM_ML" src="https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&h=300&fit=crop"
+    alt="Máy lạnh">
+  <img id="DM_NCD" src="https://limosa.vn/wp-content/uploads/2024/05/c2-1.jpg" alt="Nồi cơm điện">
+  <img id="DM_LVS" src="https://cdn.tgdd.vn/Products/Images/1944/227546/lo-vi-song-co-sharp-20-lit-r-205vn-s-1.jpg"
+    alt="Lò vi sóng">
+  <img id="DM_MHB" src="https://cdn.tgdd.vn/Products/Images/1990/282834/may-hut-bui-khong-day-electrolux-z1221-1.jpg"
+    alt="Máy hút bụi">
+  <img id="DM_MLN" src="https://cdn.tgdd.vn/Products/Images/3385/239556/may-loc-nuoc-ro-karofi-ksi80-a-8-loi-1-1.jpg"
+    alt="Máy lọc nước">
+  <img id="DM_DDB" src="https://cdn.tgdd.vn/Products/Images/2180/282711/bo-3-noi-inox-5-day-sunhouse-shg2503mdi-1.jpg"
+    alt="Đồ dùng bếp">
+  <img id="DM_NTM" src="https://cdn.tgdd.vn/Products/Images/7140/314275/khoa-dien-tu-xiaomi-1-1.jpg"
+    alt="Nhà thông minh">
 
 </body>
+
 </html>

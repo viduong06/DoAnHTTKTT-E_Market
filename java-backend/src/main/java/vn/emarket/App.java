@@ -34,7 +34,7 @@ public class App {
 
   public static void main(String[] args) throws Exception {
     // Resolve đường dẫn từ working directory (java-backend/)
-    WEB_ROOT   = Path.of(env("WEB_ROOT",   "../webpttkhttt")).toAbsolutePath().normalize();
+    WEB_ROOT = Path.of(env("WEB_ROOT", "../webpttkhttt")).toAbsolutePath().normalize();
     ADMIN_ROOT = Path.of(env("ADMIN_ROOT", "../admin")).toAbsolutePath().normalize();
 
     System.out.println("WEB_ROOT   = " + WEB_ROOT);
@@ -134,7 +134,8 @@ public class App {
     // Route /admin/... → ADMIN_ROOT
     if (rawPath.startsWith("/admin/") || rawPath.equals("/admin")) {
       String relative = rawPath.replaceFirst("^/admin/?", "");
-      if (relative.isEmpty()) relative = "admin.html";
+      if (relative.isEmpty())
+        relative = "admin.html";
       Path target = ADMIN_ROOT.resolve(relative).normalize();
       System.out.println("[admin] " + rawPath + " -> " + target + " | exists=" + Files.exists(target));
       if (target.startsWith(ADMIN_ROOT) && Files.exists(target) && !Files.isDirectory(target)) {
@@ -208,7 +209,13 @@ public class App {
         List.of("DM_MG", "Máy giặt"),
         List.of("DM_TL", "Tủ lạnh"),
         List.of("DM_TV", "Tivi"),
-        List.of("DM_ML", "Máy lạnh")));
+        List.of("DM_ML", "Máy lạnh"),
+        List.of("DM_NCD", "Nồi cơm điện"),
+        List.of("DM_LVS", "Lò vi sóng"),
+        List.of("DM_MHB", "Máy hút bụi"),
+        List.of("DM_MLN", "Máy lọc nước"),
+        List.of("DM_DDB", "Đồ dùng bếp"),
+        List.of("DM_NTM", "Nhà thông minh")));
   }
 
   private static void seedStaff(Connection conn) throws SQLException {
@@ -236,26 +243,53 @@ public class App {
   private static void seedProducts(Connection conn) throws SQLException {
     String sql = "INSERT INTO SanPham (productID, productName, categoryID, brand, priceProduct, originalPrice, quantityProduct, capacity, energySaving, smartFeature, descriptionProduct, rating, reviewsCount, soldCount, isFlashSale, soldFlash, limitFlash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     insertRows(conn, sql, List.of(
-        List.of("SP_MG_01", "Máy giặt Samsung Inverter 10kg", "DM_MG", "Samsung", 8490000, 10990000, 25, "10kg", "5 sao", "Có", "Máy giặt inverter tiết kiệm điện, vận hành êm.", 4.8, 128, 86, true, 35, 80),
-        List.of("SP_MG_02", "Máy giặt LG AI DD 9kg", "DM_MG", "LG", 7690000, 9490000, 18, "9kg", "5 sao", "Có", "Công nghệ AI DD bảo vệ sợi vải.", 4.7, 96, 64, false, 0, 0),
-        List.of("SP_MG_03", "Máy giặt Panasonic Inverter 10kg", "DM_MG", "Panasonic", 7290000, 9290000, 20, "10kg", "5 sao", "Không", "Giặt sạch mạnh mẽ, tiết kiệm điện nước.", 4.6, 74, 45, false, 0, 0),
-        List.of("SP_MG_04", "Máy giặt Toshiba Inverter 9kg", "DM_MG", "Toshiba", 6490000, 8490000, 15, "9kg", "4 sao", "Không", "Công nghệ Dual Spray làm sạch hiệu quả.", 4.5, 52, 31, false, 0, 0),
-        List.of("SP_MG_05", "Máy giặt Samsung EcoBubble 12kg", "DM_MG", "Samsung", 9990000, 12490000, 10, "12kg", "5 sao", "Có", "Công nghệ EcoBubble giặt sạch ngay cả nước lạnh.", 4.8, 61, 40, false, 0, 0),
-        List.of("SP_TL_01", "Tủ lạnh Panasonic Inverter 326L", "DM_TL", "Panasonic", 9990000, 12490000, 16, "326L", "5 sao", "Không", "Ngăn đông mềm và làm lạnh nhanh.", 4.9, 142, 73, true, 42, 90),
-        List.of("SP_TL_02", "Tủ lạnh Samsung Bespoke 352L", "DM_TL", "Samsung", 12990000, 15990000, 12, "352L", "5 sao", "Có", "Thiết kế hiện đại, quản lý thông minh.", 4.8, 88, 51, false, 0, 0),
-        List.of("SP_TL_03", "Tủ lạnh LG InstaView 506L", "DM_TL", "LG", 19990000, 24990000, 8, "506L", "5 sao", "Có", "Gõ nhẹ để xem bên trong không cần mở cửa.", 4.9, 63, 29, false, 0, 0),
-        List.of("SP_TL_04", "Tủ lạnh Toshiba Inverter 233L", "DM_TL", "Toshiba", 6990000, 8990000, 20, "233L", "4 sao", "Không", "Làm lạnh nhanh, khử mùi hiệu quả.", 4.5, 47, 28, false, 0, 0),
-        List.of("SP_TL_05", "Tủ lạnh Xiaomi Side By Side 536L", "DM_TL", "Xiaomi", 14990000, 18990000, 9, "536L", "5 sao", "Có", "Điều khiển qua app, màn hình cảm ứng.", 4.7, 55, 22, false, 0, 0),
-        List.of("SP_TV_01", "Smart TV Sony 4K 55 inch", "DM_TV", "Sony", 13990000, 17990000, 20, "55 inch", "4 sao", "Có", "Hình ảnh 4K sắc nét, âm thanh sống động.", 4.9, 210, 120, true, 58, 100),
-        List.of("SP_TV_02", "Smart TV LG OLED 48 inch", "DM_TV", "LG", 18990000, 22990000, 10, "48 inch", "4 sao", "Có", "Màn hình OLED, màu đen sâu.", 4.8, 76, 38, false, 0, 0),
-        List.of("SP_TV_03", "Smart TV Samsung QLED 65 inch", "DM_TV", "Samsung", 22990000, 28990000, 7, "65 inch", "4 sao", "Có", "Công nghệ QLED rực rỡ, độ sáng cao.", 4.8, 93, 44, false, 0, 0),
-        List.of("SP_TV_04", "Smart TV Xiaomi 43 inch", "DM_TV", "Xiaomi", 5990000, 7990000, 25, "43 inch", "3 sao", "Có", "Giá tốt, tích hợp Android TV đầy đủ.", 4.5, 134, 89, false, 0, 0),
-        List.of("SP_TV_05", "Smart TV Sony Bravia 75 inch", "DM_TV", "Sony", 34990000, 42990000, 5, "75 inch", "4 sao", "Có", "Màn hình siêu lớn, trải nghiệm rạp phim tại nhà.", 4.9, 48, 17, false, 0, 0),
-        List.of("SP_ML_01", "Máy lạnh Daikin Inverter 1.5HP", "DM_ML", "Daikin", 10990000, 13490000, 14, "1.5HP", "5 sao", "Không", "Làm lạnh nhanh, tiết kiệm điện.", 4.7, 115, 69, false, 0, 0),
-        List.of("SP_ML_02", "Máy lạnh Panasonic Nanoe X 1HP", "DM_ML", "Panasonic", 9490000, 11990000, 15, "1HP", "5 sao", "Có", "Lọc khí Nanoe X, vận hành bền bỉ.", 4.8, 101, 57, false, 0, 0),
-        List.of("SP_ML_03", "Máy lạnh LG Dual Cool 2HP", "DM_ML", "LG", 14990000, 18490000, 11, "2HP", "5 sao", "Có", "Công nghệ Dual Cool làm lạnh 2 chiều.", 4.7, 82, 48, false, 0, 0),
-        List.of("SP_ML_04", "Máy lạnh Samsung WindFree 1HP", "DM_ML", "Samsung", 9990000, 12490000, 13, "1HP", "5 sao", "Có", "Công nghệ WindFree không gió lạnh trực tiếp.", 4.8, 97, 58, false, 0, 0),
-        List.of("SP_ML_05", "Máy lạnh Toshiba Inverter 1.5HP", "DM_ML", "Toshiba", 8490000, 10990000, 16, "1.5HP", "5 sao", "Không", "Bền bỉ, tiết kiệm điện vượt trội.", 4.6, 68, 41, false, 0, 0)));
+        List.of("SP_MG_01", "Máy giặt Samsung Inverter 10kg", "DM_MG", "Samsung", 8490000, 10990000, 25, "10kg",
+            "5 sao", "Có", "Máy giặt inverter tiết kiệm điện, vận hành êm.", 4.8, 128, 86, true, 35, 80),
+        List.of("SP_MG_02", "Máy giặt LG AI DD 9kg", "DM_MG", "LG", 7690000, 9490000, 18, "9kg", "5 sao", "Có",
+            "Công nghệ AI DD bảo vệ sợi vải.", 4.7, 96, 64, false, 0, 0),
+        List.of("SP_MG_03", "Máy giặt Panasonic Inverter 10kg", "DM_MG", "Panasonic", 7290000, 9290000, 20, "10kg",
+            "5 sao", "Không", "Giặt sạch mạnh mẽ, tiết kiệm điện nước.", 4.6, 74, 45, false, 0, 0),
+        List.of("SP_MG_04", "Máy giặt Toshiba Inverter 9kg", "DM_MG", "Toshiba", 6490000, 8490000, 15, "9kg", "4 sao",
+            "Không", "Công nghệ Dual Spray làm sạch hiệu quả.", 4.5, 52, 31, false, 0, 0),
+        List.of("SP_MG_05", "Máy giặt Samsung EcoBubble 12kg", "DM_MG", "Samsung", 9990000, 12490000, 10, "12kg",
+            "5 sao", "Có", "Công nghệ EcoBubble giặt sạch ngay cả nước lạnh.", 4.8, 61, 40, false, 0, 0),
+        List.of("SP_TL_01", "Tủ lạnh Panasonic Inverter 326L", "DM_TL", "Panasonic", 9990000, 12490000, 16, "326L",
+            "5 sao", "Không", "Ngăn đông mềm và làm lạnh nhanh.", 4.9, 142, 73, true, 42, 90),
+        List.of("SP_TL_02", "Tủ lạnh Samsung Bespoke 352L", "DM_TL", "Samsung", 12990000, 15990000, 12, "352L", "5 sao",
+            "Có", "Thiết kế hiện đại, quản lý thông minh.", 4.8, 88, 51, false, 0, 0),
+        List.of("SP_TL_03", "Tủ lạnh LG InstaView 506L", "DM_TL", "LG", 19990000, 24990000, 8, "506L", "5 sao", "Có",
+            "Gõ nhẹ để xem bên trong không cần mở cửa.", 4.9, 63, 29, false, 0, 0),
+        List.of("SP_TL_04", "Tủ lạnh Toshiba Inverter 233L", "DM_TL", "Toshiba", 6990000, 8990000, 20, "233L", "4 sao",
+            "Không", "Làm lạnh nhanh, khử mùi hiệu quả.", 4.5, 47, 28, false, 0, 0),
+        List.of("SP_TL_05", "Tủ lạnh Xiaomi Side By Side 536L", "DM_TL", "Xiaomi", 14990000, 18990000, 9, "536L",
+            "5 sao", "Có", "Điều khiển qua app, màn hình cảm ứng.", 4.7, 55, 22, false, 0, 0),
+        List.of("SP_TV_01", "Smart TV Sony 4K 55 inch", "DM_TV", "Sony", 13990000, 17990000, 20, "55 inch", "4 sao",
+            "Có", "Hình ảnh 4K sắc nét, âm thanh sống động.", 4.9, 210, 120, true, 58, 100),
+        List.of("SP_TV_02", "Smart TV LG OLED 48 inch", "DM_TV", "LG", 18990000, 22990000, 10, "48 inch", "4 sao", "Có",
+            "Màn hình OLED, màu đen sâu.", 4.8, 76, 38, false, 0, 0),
+        List.of("SP_TV_03", "Smart TV Samsung QLED 65 inch", "DM_TV", "Samsung", 22990000, 28990000, 7, "65 inch",
+            "4 sao", "Có", "Công nghệ QLED rực rỡ, độ sáng cao.", 4.8, 93, 44, false, 0, 0),
+        List.of("SP_TV_04", "Smart TV Xiaomi 43 inch", "DM_TV", "Xiaomi", 5990000, 7990000, 25, "43 inch", "3 sao",
+            "Có", "Giá tốt, tích hợp Android TV đầy đủ.", 4.5, 134, 89, false, 0, 0),
+        List.of("SP_TV_05", "Smart TV Sony Bravia 75 inch", "DM_TV", "Sony", 34990000, 42990000, 5, "75 inch", "4 sao",
+            "Có", "Màn hình siêu lớn, trải nghiệm rạp phim tại nhà.", 4.9, 48, 17, false, 0, 0),
+        List.of("SP_ML_01", "Máy lạnh Daikin Inverter 1.5HP", "DM_ML", "Daikin", 10990000, 13490000, 14, "1.5HP",
+            "5 sao", "Không", "Làm lạnh nhanh, tiết kiệm điện.", 4.7, 115, 69, false, 0, 0),
+        List.of("SP_ML_02", "Máy lạnh Panasonic Nanoe X 1HP", "DM_ML", "Panasonic", 9490000, 11990000, 15, "1HP",
+            "5 sao", "Có", "Lọc khí Nanoe X, vận hành bền bỉ.", 4.8, 101, 57, false, 0, 0),
+        List.of("SP_ML_03", "Máy lạnh LG Dual Cool 2HP", "DM_ML", "LG", 14990000, 18490000, 11, "2HP", "5 sao", "Có",
+            "Công nghệ Dual Cool làm lạnh 2 chiều.", 4.7, 82, 48, false, 0, 0),
+        List.of("SP_ML_04", "Máy lạnh Samsung WindFree 1HP", "DM_ML", "Samsung", 9990000, 12490000, 13, "1HP", "5 sao",
+            "Có", "Công nghệ WindFree không gió lạnh trực tiếp.", 4.8, 97, 58, false, 0, 0),
+        List.of("SP_ML_05", "Máy lạnh Toshiba Inverter 1.5HP", "DM_ML", "Toshiba", 8490000, 10990000, 16, "1.5HP",
+            "5 sao", "Không", "Bền bỉ, tiết kiệm điện vượt trội.", 4.6, 68, 41, false, 0, 0),
+        List.of("SP_NCD_01", "Nồi cơm nắp gài Kangaroo 3 lít", "DM_NCD", "Kangaroo", 450000, 650000, 50, "3 lít", "4 sao", "Không", "Nồi cơm điện dung tích lớn dành cho gia đình.", 4.5, 42, 100, false, 0, 0),
+        List.of("SP_LVS_01", "Lò vi sóng Sharp 20 lít", "DM_LVS", "Sharp", 1290000, 1590000, 30, "20 lít", "4 sao", "Không", "Lò vi sóng cơ bền bỉ, dễ sử dụng.", 4.6, 50, 120, false, 0, 0),
+        List.of("SP_MHB_01", "Máy hút bụi Electrolux", "DM_MHB", "Electrolux", 2490000, 2990000, 25, "1.5 lít", "5 sao", "Có", "Máy hút bụi công suất cao, lọc bụi mịn.", 4.8, 65, 85, false, 0, 0),
+        List.of("SP_MLN_01", "Máy lọc nước Karofi 10 lõi", "DM_MLN", "Karofi", 4590000, 5590000, 15, "10 lít", "5 sao", "Có", "Máy lọc nước tinh khiết, bổ sung khoáng chất.", 4.9, 88, 40, true, 10, 50),
+        List.of("SP_DDB_01", "Bộ nồi inox 3 đáy Sunhouse", "DM_DDB", "Sunhouse", 550000, 750000, 100, "3 món", "4 sao", "Không", "Bộ nồi inox cao cấp, dùng được bếp từ.", 4.7, 150, 300, false, 0, 0),
+        List.of("SP_NTM_01", "Khóa cửa thông minh Xiaomi", "DM_NTM", "Xiaomi", 3290000, 3990000, 20, "1", "5 sao", "Có", "Mở khóa bằng vân tay, mật khẩu, thẻ từ.", 4.8, 70, 60, false, 0, 0)
+    ));
   }
 
   private static void insertRows(Connection conn, String sql, List<List<Object>> rows) throws SQLException {
@@ -323,13 +357,14 @@ public class App {
       try {
         StringBuilder json = new StringBuilder("[");
         try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(
-               "SELECT orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerID " +
-               "FROM DonHang ORDER BY orderDate DESC")) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(
+                "SELECT orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerID " +
+                    "FROM DonHang ORDER BY orderDate DESC")) {
           int row = 0;
           while (rs.next()) {
-            if (row++ > 0) json.append(',');
+            if (row++ > 0)
+              json.append(',');
             json.append(rowToJson(rs));
           }
         }
@@ -348,7 +383,7 @@ public class App {
         String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         Map<String, String> data = parseFormData(body);
         String orderId = data.get("orderId");
-        String status  = data.get("status");
+        String status = data.get("status");
 
         if (orderId == null || status == null) {
           send(exchange, 400, "{\"error\":\"Missing orderId or status\"}", "application/json; charset=utf-8");
@@ -356,8 +391,8 @@ public class App {
         }
 
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-               "UPDATE DonHang SET status = ? WHERE orderId = ?")) {
+            PreparedStatement ps = conn.prepareStatement(
+                "UPDATE DonHang SET status = ? WHERE orderId = ?")) {
           ps.setString(1, status);
           ps.setString(2, orderId);
           int rows = ps.executeUpdate();
@@ -390,13 +425,14 @@ public class App {
       String paymentMethod = data.get("paymentMethod");
       int customerID = Integer.parseInt(data.get("customerID"));
       String staffId = data.get("staffId");
-      
+
       int itemCount = Integer.parseInt(data.get("itemCount"));
 
       try (Connection conn = getConnection()) {
         conn.setAutoCommit(false);
         try {
-          try (PreparedStatement ps = conn.prepareStatement("INSERT INTO DonHang (orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerID, staffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+          try (PreparedStatement ps = conn.prepareStatement(
+              "INSERT INTO DonHang (orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerID, staffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setString(1, orderId);
             ps.setString(2, orderDate);
             ps.setInt(3, totalAmount);
@@ -408,7 +444,8 @@ public class App {
             ps.executeUpdate();
           }
 
-          try (PreparedStatement ps = conn.prepareStatement("INSERT INTO ChiTietDonHang (orderId, productID, quantity, unitPrice) VALUES (?, ?, ?, ?)")) {
+          try (PreparedStatement ps = conn.prepareStatement(
+              "INSERT INTO ChiTietDonHang (orderId, productID, quantity, unitPrice) VALUES (?, ?, ?, ?)")) {
             for (int i = 0; i < itemCount; i++) {
               ps.setString(1, orderId);
               ps.setString(2, data.get("item_" + i + "_id"));
@@ -428,7 +465,8 @@ public class App {
             } else if (orderDate != null) {
               dateOnly = orderDate;
             }
-            updateMemberPointsAndHistory(conn, customerID, earnedPoints, "add", orderId, "cộng", "Tích lũy đơn hàng " + orderId, dateOnly);
+            updateMemberPointsAndHistory(conn, customerID, earnedPoints, "add", orderId, "cộng",
+                "Tích lũy đơn hàng " + orderId, dateOnly);
           }
 
           conn.commit();
@@ -459,7 +497,8 @@ public class App {
       String orderId = data.getOrDefault("orderId", "VOUCHER");
       String type = data.getOrDefault("type", "trừ");
       String reason = data.getOrDefault("reason", "");
-      String date = data.getOrDefault("date", new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()));
+      String date = data.getOrDefault("date",
+          new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()));
 
       try (Connection conn = getConnection()) {
         conn.setAutoCommit(false);
@@ -478,13 +517,15 @@ public class App {
     }
   }
 
-  private static void updateMemberPointsAndHistory(Connection conn, int customerID, int pointsChange, String action, String orderId, String type, String reason, String date) throws SQLException {
+  private static void updateMemberPointsAndHistory(Connection conn, int customerID, int pointsChange, String action,
+      String orderId, String type, String reason, String date) throws SQLException {
     int currentPoints = 0;
     String currentRank = "Đồng";
     double discountRate = 0.00;
     boolean hasMember = false;
-    
-    try (PreparedStatement ps = conn.prepareStatement("SELECT point, rank, discountRate FROM TheThanhVien WHERE customerID = ?")) {
+
+    try (PreparedStatement ps = conn
+        .prepareStatement("SELECT point, rank, discountRate FROM TheThanhVien WHERE customerID = ?")) {
       ps.setInt(1, customerID);
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
@@ -495,28 +536,29 @@ public class App {
         }
       }
     }
-    
+
     if (!hasMember) {
       return;
     }
-    
+
     int newPoints = currentPoints;
     String newRank = currentRank;
     double newDiscountRate = discountRate;
-    
+
     if ("cancel".equalsIgnoreCase(action)) {
       newPoints = 0;
       newRank = "Đồng";
       newDiscountRate = 0.00;
     } else {
       newPoints = currentPoints + pointsChange;
-      if (newPoints < 0) newPoints = 0;
-      
+      if (newPoints < 0)
+        newPoints = 0;
+
       if (pointsChange > 0) {
         int targetVal = 1;
         String targetRank = "Đồng";
         double targetRate = 0.00;
-        
+
         if (newPoints >= 2000) {
           targetVal = 3;
           targetRank = "Vàng";
@@ -526,27 +568,31 @@ public class App {
           targetRank = "Bạc";
           targetRate = 0.05;
         }
-        
+
         int currentVal = 1;
-        if ("Vàng".equals(currentRank)) currentVal = 3;
-        else if ("Bạc".equals(currentRank)) currentVal = 2;
-        
+        if ("Vàng".equals(currentRank))
+          currentVal = 3;
+        else if ("Bạc".equals(currentRank))
+          currentVal = 2;
+
         if (targetVal > currentVal) {
           newRank = targetRank;
           newDiscountRate = targetRate;
         }
       }
     }
-    
-    try (PreparedStatement ps = conn.prepareStatement("UPDATE TheThanhVien SET point = ?, rank = ?, discountRate = ? WHERE customerID = ?")) {
+
+    try (PreparedStatement ps = conn
+        .prepareStatement("UPDATE TheThanhVien SET point = ?, rank = ?, discountRate = ? WHERE customerID = ?")) {
       ps.setInt(1, newPoints);
       ps.setString(2, newRank);
       ps.setDouble(3, newDiscountRate);
       ps.setInt(4, customerID);
       ps.executeUpdate();
     }
-    
-    try (PreparedStatement ps = conn.prepareStatement("INSERT INTO LichSuDiem (date, orderId, points, type, reason) VALUES (?, ?, ?, ?, ?)")) {
+
+    try (PreparedStatement ps = conn
+        .prepareStatement("INSERT INTO LichSuDiem (date, orderId, points, type, reason) VALUES (?, ?, ?, ?, ?)")) {
       ps.setString(1, date);
       ps.setString(2, orderId);
       ps.setInt(3, pointsChange);

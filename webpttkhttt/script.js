@@ -470,14 +470,39 @@ function initDetailPage() {
   if (badgeEl) badgeEl.innerText = `Giảm -${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%`;
 
   // Set ảnh gallery
-  const imgUrl = getProductImage(p);
-  const galleryMain = document.querySelector(".detail-gallery-main");
-  if (galleryMain) {
-    galleryMain.innerHTML = `<img src="${imgUrl}" alt="${p.productName}" style="width:100%;height:100%;object-fit:contain;border-radius:var(--radius);">`;
+  let imgUrls = [];
+  for (let i = 1; i <= 6; i++) {
+    let suffix = i === 1 ? "" : "_" + i;
+    let u = IMAGE_MAP[p.productID + suffix];
+    if (u) imgUrls.push(u);
   }
-  document.querySelectorAll(".detail-thumb").forEach(thumb => {
-    thumb.innerHTML = `<img src="${imgUrl}" alt="${p.productName}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
-  });
+  if (imgUrls.length === 0) {
+    imgUrls.push(IMAGE_MAP[p.categoryID] || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop");
+  }
+
+  const galleryMain = document.querySelector(".detail-gallery-main");
+  if (galleryMain && imgUrls.length > 0) {
+    galleryMain.innerHTML = `<img src="${imgUrls[0]}" alt="${p.productName}" id="dp-main-img" style="width:100%;height:100%;object-fit:contain;border-radius:var(--radius);">`;
+  }
+
+  const galleryThumbs = document.querySelector(".detail-gallery-thumbs");
+  if (galleryThumbs && imgUrls.length > 0) {
+    galleryThumbs.innerHTML = imgUrls.map((u, i) => `
+      <div class="detail-thumb ${i === 0 ? 'active' : ''}" data-url="${u}">
+        <img src="${u}" alt="${p.productName}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">
+      </div>
+    `).join("");
+
+    document.querySelectorAll(".detail-thumb").forEach(thumb => {
+      thumb.onclick = function() {
+        const url = this.getAttribute("data-url");
+        const mainImg = document.getElementById("dp-main-img");
+        if (mainImg) mainImg.src = url;
+        document.querySelectorAll(".detail-thumb").forEach(t => t.classList.remove("active"));
+        this.classList.add("active");
+      };
+    });
+  }
 
   if (btnCart) {
     btnCart.onclick = () => addToCart(p.productID, 1);
