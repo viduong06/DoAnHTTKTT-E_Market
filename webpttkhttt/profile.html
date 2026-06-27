@@ -20,8 +20,6 @@
         <div>Hỗ trợ trực tuyến 24/7: 1800 1234</div>
         <div style="display: flex; gap: 20px;">
           <a href="stores.html">Hệ thống cửa hàng</a>
-          <a href="order-lookup.html">Tra cứu đơn hàng</a>
-          <a href="profile.html">Thành viên vip</a>
         </div>
       </div>
     </div>
@@ -94,108 +92,144 @@
 
         <div class="profile-nav">
           <div class="profile-nav-item">Đơn hàng của tôi</div>
-          <div class="profile-nav-item">Sản phẩm yêu thích</div>
-          <div class="profile-nav-item">Sản phẩm đã xem</div>
-          <div class="profile-nav-item active">Thẻ thành viên</div>
-          <div class="profile-nav-item">Quản lý bảo hành</div>
-          <div class="profile-nav-item">Yêu cầu đổi trả</div>
-          <div class="profile-nav-item">Địa chỉ đã lưu</div>
-          <div class="profile-nav-item">Thông tin cá nhân</div>
+          <div class="profile-nav-item active" id="nav-member-card" onclick="switchTab('member-card')">Thẻ thành viên
+          </div>
+          <div class="profile-nav-item" id="nav-personal-info" onclick="switchTab('personal-info')">Thông tin cá nhân
+          </div>
         </div>
       </aside>
 
       <main class="profile-content">
-        <h2 class="profile-section-title">Quản Lý Thẻ Thành Viên</h2>
+        <div id="tab-member-card">
+          <h2 class="profile-section-title">Quản Lý Thẻ Thành Viên</h2>
 
-        <div class="membership-card-wrapper">
-          <div class="membership-card" id="member-card-dom">
-            <div class="membership-card-glow"></div>
+          <div class="membership-card-wrapper">
+            <div class="membership-card" id="member-card-dom">
+              <div class="membership-card-glow"></div>
 
-            <div class="membership-card-header">
-              <span class="membership-card-logo">ELECTROMAX VIP</span>
-              <span class="membership-card-tier" id="member-tier-value">BẠC MEMBER</span>
+              <div class="membership-card-header">
+                <span class="membership-card-logo">ELECTROMAX VIP</span>
+                <span class="membership-card-tier" id="member-tier-value">BẠC MEMBER</span>
+              </div>
+
+              <div class="membership-card-number" id="member-card-number">TV-000000</div>
+
+              <div class="membership-card-footer">
+                <div>
+                  <div class="membership-holder-label">Chủ thẻ</div>
+                  <div class="membership-holder-name" id="member-holder-name">HỌ TÊN KHÁCH HÀNG</div>
+                </div>
+                <div style="text-align: right;">
+                  <div class="membership-holder-label">Điểm tích lũy</div>
+                  <div class="membership-points-value" id="member-points-value">0 Điểm</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-section">
+            <div class="progress-header">
+              <span id="upgrade-title">Tiến độ nâng hạng (Thẻ Đồng lên Thẻ Bạc)</span>
+              <span id="upgrade-progress-label">0/1000 điểm</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-bar" id="upgrade-progress-bar" style="width: 0%"></div>
+            </div>
+            <p class="progress-text" id="upgrade-progress-desc">Tích lũy thêm điểm để nâng hạng đặc quyền.</p>
+          </div>
+
+          <h3 class="section-title" style="font-size: 1.2rem; margin-bottom: 24px;">Lịch Sử Điểm Thưởng</h3>
+
+          <div class="table-wrapper">
+            <table class="points-table">
+              <thead>
+                <tr>
+                  <th>Ngày Giao Dịch</th>
+                  <th>Mã Đơn Hàng</th>
+                  <th>Số Điểm</th>
+                  <th>Mô Tả Chi Tiết</th>
+                </tr>
+              </thead>
+              <tbody id="points-table-body"></tbody>
+            </table>
+          </div>
+
+          <h3 class="section-title" style="font-size: 1.2rem; margin-bottom: 24px;">Đổi Điểm Nhận Ưu Đãi</h3>
+          <p class="section-subtitle" style="margin-top: -16px; margin-bottom: 24px;">Sử dụng điểm tích lũy của bạn để
+            quy
+            đổi ra các mã voucher giảm giá mua sắm hấp dẫn</p>
+
+          <div class="vouchers-grid">
+            <div class="voucher-card">
+              <div class="voucher-value">50.000đ</div>
+              <div class="voucher-title">Voucher Giảm Giá 50K</div>
+              <div class="voucher-desc">Áp dụng cho mọi đơn hàng điện máy từ 500.000đ. Hạn dùng 30 ngày.</div>
+              <div class="voucher-cost">Yêu cầu: 100 Điểm</div>
+              <button class="btn btn-blue voucher-btn" onclick="redeemVoucher(100, 'Voucher 50K')">Đổi Ngay</button>
             </div>
 
-            <div class="membership-card-number" id="member-card-number">TV-000000</div>
+            <div class="voucher-card">
+              <div class="voucher-value">100.000đ</div>
+              <div class="voucher-title">Voucher Giảm Giá 100K</div>
+              <div class="voucher-desc">Áp dụng cho mọi đơn hàng điện máy từ 1.500.000đ. Hạn dùng 30 ngày.</div>
+              <div class="voucher-cost">Yêu cầu: 200 Điểm</div>
+              <button class="btn btn-blue voucher-btn" onclick="redeemVoucher(200, 'Voucher 100K')">Đổi Ngay</button>
+            </div>
 
-            <div class="membership-card-footer">
-              <div>
-                <div class="membership-holder-label">Chủ thẻ</div>
-                <div class="membership-holder-name" id="member-holder-name">HỌ TÊN KHÁCH HÀNG</div>
-              </div>
-              <div style="text-align: right;">
-                <div class="membership-holder-label">Điểm tích lũy</div>
-                <div class="membership-points-value" id="member-points-value">0 Điểm</div>
-              </div>
+            <div class="voucher-card">
+              <div class="voucher-value">250.000đ</div>
+              <div class="voucher-title">Voucher Giảm Giá 250K</div>
+              <div class="voucher-desc">Áp dụng cho mọi đơn hàng điện máy từ 3.000.000đ. Hạn dùng 30 ngày.</div>
+              <div class="voucher-cost">Yêu cầu: 500 Điểm</div>
+              <button class="btn btn-blue voucher-btn" onclick="redeemVoucher(500, 'Voucher 250K')">Đổi Ngay</button>
             </div>
           </div>
-        </div>
 
-        <div class="progress-section">
-          <div class="progress-header">
-            <span id="upgrade-title">Tiến độ nâng hạng (Thẻ Đồng lên Thẻ Bạc)</span>
-            <span id="upgrade-progress-label">0/1000 điểm</span>
-          </div>
-          <div class="progress-track">
-            <div class="progress-bar" id="upgrade-progress-bar" style="width: 0%"></div>
-          </div>
-          <p class="progress-text" id="upgrade-progress-desc">Tích lũy thêm điểm để nâng hạng đặc quyền.</p>
-        </div>
-
-        <h3 class="section-title" style="font-size: 1.2rem; margin-bottom: 24px;">Lịch Sử Điểm Thưởng</h3>
-
-        <div class="table-wrapper">
-          <table class="points-table">
-            <thead>
-              <tr>
-                <th>Ngày Giao Dịch</th>
-                <th>Mã Đơn Hàng</th>
-                <th>Số Điểm</th>
-                <th>Mô Tả Chi Tiết</th>
-              </tr>
-            </thead>
-            <tbody id="points-table-body"></tbody>
-          </table>
-        </div>
-
-        <h3 class="section-title" style="font-size: 1.2rem; margin-bottom: 24px;">Đổi Điểm Nhận Ưu Đãi</h3>
-        <p class="section-subtitle" style="margin-top: -16px; margin-bottom: 24px;">Sử dụng điểm tích lũy của bạn để quy
-          đổi ra các mã voucher giảm giá mua sắm hấp dẫn</p>
-
-        <div class="vouchers-grid">
-          <div class="voucher-card">
-            <div class="voucher-value">50.000đ</div>
-            <div class="voucher-title">Voucher Giảm Giá 50K</div>
-            <div class="voucher-desc">Áp dụng cho mọi đơn hàng điện máy từ 500.000đ. Hạn dùng 30 ngày.</div>
-            <div class="voucher-cost">Yêu cầu: 100 Điểm</div>
-            <button class="btn btn-blue voucher-btn" onclick="redeemVoucher(100, 'Voucher 50K')">Đổi Ngay</button>
-          </div>
-
-          <div class="voucher-card">
-            <div class="voucher-value">100.000đ</div>
-            <div class="voucher-title">Voucher Giảm Giá 100K</div>
-            <div class="voucher-desc">Áp dụng cho mọi đơn hàng điện máy từ 1.500.000đ. Hạn dùng 30 ngày.</div>
-            <div class="voucher-cost">Yêu cầu: 200 Điểm</div>
-            <button class="btn btn-blue voucher-btn" onclick="redeemVoucher(200, 'Voucher 100K')">Đổi Ngay</button>
-          </div>
-
-          <div class="voucher-card">
-            <div class="voucher-value">250.000đ</div>
-            <div class="voucher-title">Voucher Giảm Giá 250K</div>
-            <div class="voucher-desc">Áp dụng cho mọi đơn hàng điện máy từ 3.000.000đ. Hạn dùng 30 ngày.</div>
-            <div class="voucher-cost">Yêu cầu: 500 Điểm</div>
-            <button class="btn btn-blue voucher-btn" onclick="redeemVoucher(500, 'Voucher 250K')">Đổi Ngay</button>
+          <div class="cancel-membership-box">
+            <div>
+              <h4 class="cancel-membership-title">Hủy Tư Cách Thành Viên</h4>
+              <p class="cancel-membership-desc">Lưu ý: Hành động này sẽ đặt lại điểm tích lũy của bạn về 0 và thu hồi
+                toàn
+                bộ ưu đãi giảm giá.</p>
+            </div>
+            <button class="btn btn-danger" id="btn-cancel-membership"
+              style="padding: 10px 20px; font-size: 0.85rem; font-weight: 700;">Hủy Thành Viên</button>
           </div>
         </div>
 
-        <div class="cancel-membership-box">
-          <div>
-            <h4 class="cancel-membership-title">Hủy Tư Cách Thành Viên</h4>
-            <p class="cancel-membership-desc">Lưu ý: Hành động này sẽ đặt lại điểm tích lũy của bạn về 0 và thu hồi toàn
-              bộ ưu đãi giảm giá.</p>
-          </div>
-          <button class="btn btn-danger" id="btn-cancel-membership"
-            style="padding: 10px 20px; font-size: 0.85rem; font-weight: 700;">Hủy Thành Viên</button>
+        <div id="tab-personal-info" style="display: none;">
+          <h2 class="profile-section-title">Đăng Ký Thông Tin Cá Nhân</h2>
+          <form id="form-personal-info"
+            style="background: #fff; padding: 24px; border-radius: var(--radius); border: 1px solid var(--border);">
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-weight: 600; margin-bottom: 8px;">Họ và Tên</label>
+              <input type="text" id="pi-name" class="quantity-input"
+                style="width: 100%; text-align: left; padding: 10px; border-radius: 6px; border: 1px solid var(--border);"
+                required>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-weight: 600; margin-bottom: 8px;">Số Điện Thoại</label>
+              <input type="text" id="pi-phone" class="quantity-input"
+                style="width: 100%; text-align: left; padding: 10px; border-radius: 6px; border: 1px solid var(--border);"
+                required>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-weight: 600; margin-bottom: 8px;">Giới Tính</label>
+              <select id="pi-gender" class="quantity-input"
+                style="width: 100%; text-align: left; padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+                <option value="Khác">Khác</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 24px;">
+              <label style="display: block; font-weight: 600; margin-bottom: 8px;">Địa Chỉ</label>
+              <input type="text" id="pi-address" class="quantity-input"
+                style="width: 100%; text-align: left; padding: 10px; border-radius: 6px; border: 1px solid var(--border);"
+                required>
+            </div>
+            <button type="submit" class="btn btn-blue" style="width: 100%;">Cập Nhật & Đăng Ký Thẻ</button>
+          </form>
         </div>
       </main>
     </div>

@@ -61,7 +61,7 @@ async function initDatabase() {
   }
 
   if (!localStorage.getItem("GioHang")) {
-    localStorage.setItem("GioHang", JSON.stringify({ cartID: 1, totalAmount: 0, customerID: 1 }));
+    localStorage.setItem("GioHang", JSON.stringify({ cartID: 1, totalAmount: 0 }));
   }
   if (!localStorage.getItem("ChiTietGioHang")) {
     localStorage.setItem("ChiTietGioHang", JSON.stringify([]));
@@ -107,8 +107,8 @@ function updateCartBadge() {
 function recalculateCartTotal() {
   const items = getCartItems();
   const subtotal = items.reduce((sum, item) => sum + (item.subTotal || 0), 0);
-  const gioHang = JSON.parse(localStorage.getItem("GioHang")) || { cartID: 1, customerID: 1 };
-  
+  const gioHang = JSON.parse(localStorage.getItem("GioHang")) || { cartID: 1 };
+
   let discount = 0;
   if (sessionStorage.getItem("activeCoupon") === "GIAM50") {
     discount = 50000;
@@ -174,7 +174,7 @@ function initCountdown() {
   const hrBox = document.getElementById("cd-h");
   const minBox = document.getElementById("cd-m");
   const secBox = document.getElementById("cd-s");
-  
+
   if (!hrBox || !minBox || !secBox) return;
 
   let totalSeconds = 4 * 3600 + 15 * 60 + 30;
@@ -185,7 +185,7 @@ function initCountdown() {
       return;
     }
     totalSeconds--;
-    
+
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
@@ -246,7 +246,7 @@ function renderSuggestedProducts() {
   grid.innerHTML = products.map(p => {
     return `
       <div class="product-card">
-        <span class="product-badge-discount">-${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%</span>
+        <span class="product-badge-discount">-${Math.round((1 - p.priceProduct / p.originalPrice) * 100)}%</span>
         <span class="product-installment">Trả góp 0%</span>
         <div class="product-img-wrapper">
           <img src="${getProductImage(p)}" alt="${p.productName}" class="product-img" loading="lazy">
@@ -366,7 +366,7 @@ function renderListingGrid(products) {
   grid.innerHTML = products.map(p => {
     return `
       <div class="product-card">
-        <span class="product-badge-discount">-${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%</span>
+        <span class="product-badge-discount">-${Math.round((1 - p.priceProduct / p.originalPrice) * 100)}%</span>
         <span class="product-installment">Trả góp 0%</span>
         <div class="product-img-wrapper">
           <img src="${getProductImage(p)}" alt="${p.productName}" class="product-img" loading="lazy">
@@ -402,7 +402,7 @@ function initListingPage() {
   const checkboxes = document.querySelectorAll(".sidebar input[type='checkbox']");
   checkboxes.forEach(chk => {
     // Dùng click thay change để bắt cả click vào ô đang được chọn
-    chk.addEventListener("click", function(e) {
+    chk.addEventListener("click", function (e) {
       const singleSelectClasses = ["price-filter", "rating-filter"];
       singleSelectClasses.forEach(cls => {
         if (this.classList.contains(cls)) {
@@ -467,7 +467,7 @@ function initDetailPage() {
   if (soldEl) soldEl.innerText = `${p.soldCount} Đã bán`;
   if (saleEl) saleEl.innerText = formatPrice(p.priceProduct);
   if (origEl) origEl.innerText = formatPrice(p.originalPrice);
-  if (badgeEl) badgeEl.innerText = `Giảm -${Math.round((1 - p.priceProduct/p.originalPrice)*100)}%`;
+  if (badgeEl) badgeEl.innerText = `Giảm -${Math.round((1 - p.priceProduct / p.originalPrice) * 100)}%`;
 
   // Set ảnh gallery
   let imgUrls = [];
@@ -494,7 +494,7 @@ function initDetailPage() {
     `).join("");
 
     document.querySelectorAll(".detail-thumb").forEach(thumb => {
-      thumb.onclick = function() {
+      thumb.onclick = function () {
         const url = this.getAttribute("data-url");
         const mainImg = document.getElementById("dp-main-img");
         if (mainImg) mainImg.src = url;
@@ -558,7 +558,7 @@ function initDetailPage() {
     } else {
       relatedGrid.innerHTML = related.map(item => `
         <div class="product-card">
-          <span class="product-badge-discount">-${Math.round((1 - item.priceProduct/item.originalPrice)*100)}%</span>
+          <span class="product-badge-discount">-${Math.round((1 - item.priceProduct / item.originalPrice) * 100)}%</span>
           <div class="product-img-wrapper">
             <img src="${getProductImage(item)}" alt="${item.productName}" class="product-img" loading="lazy">
           </div>
@@ -801,12 +801,12 @@ function initCheckoutPage() {
       shipCards.forEach(c => c.classList.remove("active"));
       card.classList.add("active");
       card.querySelector("input").checked = true;
-      
+
       const rate = parseInt(card.dataset.rate || "0");
       shipFee = rate;
       sessionStorage.setItem("shippingFee", String(rate));
       shippingEl.innerText = formatPrice(rate);
-      
+
       finalTotal = Math.max(0, subtotal - discount + rate);
       totalEl.innerText = formatPrice(finalTotal);
     };
@@ -829,7 +829,7 @@ function initCheckoutPage() {
       const fullName = document.getElementById("co-name").value.trim();
       const phone = document.getElementById("co-phone").value.trim();
       const address = document.getElementById("co-address").value.trim();
-      
+
       if (!fullName || !phone || !address) {
         showToast("Vui lòng điền đầy đủ địa chỉ nhận hàng!");
         return;
@@ -844,7 +844,7 @@ function initCheckoutPage() {
       const newOrderId = "DH-" + Math.floor(100000 + Math.random() * 900000);
       const newPaymentId = "TT-" + Math.floor(100000 + Math.random() * 900000);
 
-      const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+      const cust = JSON.parse(localStorage.getItem("KhachHang")) || { phone: "" };
       const orderDateStr = new Date().toISOString();
 
       const formData = new URLSearchParams();
@@ -854,9 +854,9 @@ function initCheckoutPage() {
       formData.append("shippingAddress", `${address} | SĐT: ${phone} | Người nhận: ${fullName}`);
       formData.append("status", "Chờ xác nhận");
       formData.append("paymentMethod", payMethod);
-      formData.append("customerID", cust.customerID || 1);
+      formData.append("customerPhone", cust.phone || "");
       formData.append("staffId", "NV001");
-      
+
       formData.append("itemCount", items.length);
       items.forEach((item, index) => {
         const prod = products.find(pr => pr.productID === item.productID);
@@ -886,7 +886,7 @@ function initCheckoutPage() {
         shippingAddress: `${address} | SĐT: ${phone} | Người nhận: ${fullName}`,
         status: "Chờ xác nhận",
         paymentMethod: payMethod,
-        customerID: cust.customerID || 1,
+        customerPhone: cust.phone || "",
         staffId: "NV001"
       };
 
@@ -913,7 +913,7 @@ function initCheckoutPage() {
         if (member.isCancelled) {
           member.isCancelled = false;
         }
-        
+
         let targetRank = "Đồng";
         let targetRate = 0.00;
         let targetVal = 1;
@@ -926,11 +926,11 @@ function initCheckoutPage() {
           targetRate = 0.05;
           targetVal = 2;
         }
-        
+
         let currentVal = 1;
         if (member.rank === "Vàng") currentVal = 3;
         else if (member.rank === "Bạc") currentVal = 2;
-        
+
         if (targetVal > currentVal) {
           member.rank = targetRank;
           member.discountRate = targetRate;
@@ -951,7 +951,7 @@ function initCheckoutPage() {
       localStorage.setItem("ChiTietGioHang", JSON.stringify([]));
       sessionStorage.removeItem("activeCoupon");
       sessionStorage.removeItem("shippingFee");
-      
+
       const gioHangObj = JSON.parse(localStorage.getItem("GioHang")) || {};
       gioHangObj.totalAmount = 0;
       localStorage.setItem("GioHang", JSON.stringify(gioHangObj));
@@ -966,12 +966,33 @@ function initCheckoutPage() {
   }
 }
 
+
+window.switchTab = function (tabName) {
+  document.querySelectorAll('.profile-nav-item').forEach(el => el.classList.remove('active'));
+  const activeNav = document.getElementById('nav-' + tabName);
+  if (activeNav) activeNav.classList.add('active');
+
+  const tabMemberCard = document.getElementById('tab-member-card');
+  const tabPersonalInfo = document.getElementById('tab-personal-info');
+
+  if (tabMemberCard) tabMemberCard.style.display = 'none';
+  if (tabPersonalInfo) tabPersonalInfo.style.display = 'none';
+
+  const activeTab = document.getElementById('tab-' + tabName);
+  if (activeTab) activeTab.style.display = 'block';
+};
+
 function initProfilePage() {
-  const member = JSON.parse(localStorage.getItem("TheThanhVien"));
-  const cust = JSON.parse(localStorage.getItem("KhachHang"));
+  let member = JSON.parse(localStorage.getItem("TheThanhVien"));
+  let cust = JSON.parse(localStorage.getItem("KhachHang"));
   const history = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
 
-  if (!member || !cust) return;
+  if (!cust || !cust.name) {
+    cust = { phone: "", name: "", email: "", address: "" };
+  }
+  if (!member || !member.cardID) {
+    member = { cardID: "TV-NEW", phone: "", point: 0, rank: "Đồng", discountRate: 0.00, isCancelled: true };
+  }
 
   const cardContainer = document.getElementById("member-card-dom");
   const cardNum = document.getElementById("member-card-number");
@@ -1059,10 +1080,10 @@ function initProfilePage() {
       showToast("Không đủ điểm thưởng để đổi voucher này!");
       return;
     }
-    const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+    const cust = JSON.parse(localStorage.getItem("KhachHang")) || { phone: "" };
 
     const formData = new URLSearchParams();
-    formData.append("customerID", cust.customerID || 1);
+    formData.append("customerPhone", cust.phone || "");
     formData.append("pointsChange", -cost);
     formData.append("action", "redeem");
     formData.append("orderId", "VOUCHER");
@@ -1113,10 +1134,10 @@ function initProfilePage() {
       cancelBtn.className = "btn btn-blue";
       cancelBtn.onclick = async () => {
         const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
-        const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+        const cust = JSON.parse(localStorage.getItem("KhachHang")) || { phone: "" };
 
         const formData = new URLSearchParams();
-        formData.append("customerID", cust.customerID || 1);
+        formData.append("customerPhone", cust.phone || "");
         formData.append("pointsChange", 0);
         formData.append("action", "register");
         formData.append("orderId", "ĐĂNG KÝ");
@@ -1167,10 +1188,10 @@ function initProfilePage() {
           return;
         }
         const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
-        const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+        const cust = JSON.parse(localStorage.getItem("KhachHang")) || { phone: "" };
 
         const formData = new URLSearchParams();
-        formData.append("customerID", cust.customerID || 1);
+        formData.append("customerPhone", cust.phone || "");
         formData.append("pointsChange", 0);
         formData.append("action", "cancel");
         formData.append("orderId", "HỦY THẺ");
@@ -1212,6 +1233,75 @@ function initProfilePage() {
       };
     }
   }
+
+  const piName = document.getElementById("pi-name");
+  const piPhone = document.getElementById("pi-phone");
+  const piAddress = document.getElementById("pi-address");
+
+  if (piName && cust.name) piName.value = cust.name;
+  if (piPhone && cust.phone) piPhone.value = cust.phone;
+  if (piAddress && cust.address) piAddress.value = cust.address;
+
+  const formPersonalInfo = document.getElementById("form-personal-info");
+  if (formPersonalInfo) {
+    formPersonalInfo.onsubmit = async (e) => {
+      e.preventDefault();
+
+      cust.name = piName.value.trim();
+      cust.phone = piPhone.value.trim();
+      cust.address = piAddress.value.trim();
+      const formData = new URLSearchParams();
+      formData.append("name", cust.name);
+      formData.append("phone", cust.phone);
+      formData.append("address", cust.address);
+
+      try {
+        const response = await fetch(`${API_BASE}/api/member/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: formData.toString()
+        });
+
+        if (response.ok) {
+          localStorage.setItem("KhachHang", JSON.stringify(cust));
+
+          if (!member || !member.cardID || member.isCancelled) {
+            member.isCancelled = false;
+            member.point = 0;
+            member.rank = "Đồng";
+            member.discountRate = 0.00;
+            member.phone = cust.phone;
+            localStorage.setItem("TheThanhVien", JSON.stringify(member));
+
+            const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+            currentHistory.unshift({
+              date: new Date().toISOString().split("T")[0],
+              orderId: "ĐĂNG KÝ",
+              points: 0,
+              type: "cộng",
+              reason: "Đăng ký thẻ thành viên"
+            });
+            localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
+          }
+
+          initProfilePage();
+          window.switchTab('member-card');
+          showToast("Cập nhật thông tin và thẻ thành viên thành công!");
+        } else {
+          showToast("Đăng ký không thành công!");
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Lỗi kết nối máy chủ!");
+      }
+
+    };
+  }
+
+  // Auto switch to personal info if member is not registered
+  if (member && member.isCancelled) {
+    window.switchTab('personal-info');
+  }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1222,7 +1312,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initCountdown();
   renderFlashSale();
   renderSuggestedProducts();
-  
+
   const searchForm = document.getElementById("header-search-form");
   if (searchForm) {
     searchForm.onsubmit = handleSearch;

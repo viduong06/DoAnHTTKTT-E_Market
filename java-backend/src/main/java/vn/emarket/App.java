@@ -46,9 +46,9 @@ public class App {
     server.createContext("/api/bootstrap", exchange -> handleJson(exchange, App::bootstrapJson));
     server.createContext("/api/products", exchange -> handleJson(exchange, () -> tableJson("SanPham")));
     server.createContext("/api/categories", exchange -> handleJson(exchange, () -> tableJson("DanhMuc")));
-    server.createContext("/api/orders", App::handleOrders);
     server.createContext("/api/checkout", App::handleCheckout);
     server.createContext("/api/member/update-points", App::handleUpdatePoints);
+    server.createContext("/api/member/register", App::handleRegisterMember);
     server.createContext("/", App::serveStatic);
     server.setExecutor(null);
     server.start();
@@ -154,9 +154,6 @@ public class App {
       }
     }
 
-    // Cập nhật imageUrl cho sản phẩm cũ chưa có ảnh
-    // (đã chuyển sang product-images.html)
-
     if (tableCount("SanPham") > 0) {
       return;
     }
@@ -165,9 +162,6 @@ public class App {
       conn.setAutoCommit(false);
       seedCategories(conn);
       seedStaff(conn);
-      seedCustomer(conn);
-      seedMember(conn);
-      seedPointHistory(conn);
       seedProducts(conn);
       conn.commit();
     }
@@ -177,11 +171,11 @@ public class App {
     return List.of(
         "IF OBJECT_ID('DanhMuc', 'U') IS NULL CREATE TABLE DanhMuc (categoryID VARCHAR(20) PRIMARY KEY, categoryName NVARCHAR(255) NOT NULL)",
         "IF OBJECT_ID('NhanVien', 'U') IS NULL CREATE TABLE NhanVien (staffId VARCHAR(20) PRIMARY KEY, staffName NVARCHAR(255), roleName NVARCHAR(100))",
-        "IF OBJECT_ID('KhachHang', 'U') IS NULL CREATE TABLE KhachHang (customerID INT PRIMARY KEY, name NVARCHAR(255), email VARCHAR(255), phone VARCHAR(50), address NVARCHAR(MAX))",
-        "IF OBJECT_ID('TheThanhVien', 'U') IS NULL CREATE TABLE TheThanhVien (cardID VARCHAR(30) PRIMARY KEY, customerID INT, point INT, rank NVARCHAR(50), discountRate DECIMAL(4,2), FOREIGN KEY (customerID) REFERENCES KhachHang(customerID))",
+        "IF OBJECT_ID('KhachHang', 'U') IS NULL CREATE TABLE KhachHang (phone VARCHAR(50) PRIMARY KEY, name NVARCHAR(255), address NVARCHAR(MAX))",
+        "IF OBJECT_ID('TheThanhVien', 'U') IS NULL CREATE TABLE TheThanhVien (cardID VARCHAR(30) PRIMARY KEY, phone VARCHAR(50), point INT, rank NVARCHAR(50), discountRate DECIMAL(4,2), FOREIGN KEY (phone) REFERENCES KhachHang(phone))",
         "IF OBJECT_ID('LichSuDiem', 'U') IS NULL CREATE TABLE LichSuDiem (historyID INT IDENTITY(1,1) PRIMARY KEY, date VARCHAR(20), orderId VARCHAR(30), points INT, type NVARCHAR(20), reason NVARCHAR(MAX))",
         "IF OBJECT_ID('SanPham', 'U') IS NULL CREATE TABLE SanPham (productID VARCHAR(30) PRIMARY KEY, productName NVARCHAR(255) NOT NULL, categoryID VARCHAR(20), brand NVARCHAR(100), priceProduct INT NOT NULL, originalPrice INT NOT NULL, quantityProduct INT DEFAULT 0, capacity NVARCHAR(100), energySaving NVARCHAR(50), smartFeature NVARCHAR(50), descriptionProduct NVARCHAR(MAX), rating DECIMAL(3,1), reviewsCount INT DEFAULT 0, soldCount INT DEFAULT 0, isFlashSale BIT DEFAULT 0, soldFlash INT DEFAULT 0, limitFlash INT DEFAULT 0, FOREIGN KEY (categoryID) REFERENCES DanhMuc(categoryID))",
-        "IF OBJECT_ID('DonHang', 'U') IS NULL CREATE TABLE DonHang (orderId VARCHAR(30) PRIMARY KEY, orderDate VARCHAR(50), totalAmount INT, shippingAddress NVARCHAR(MAX), status NVARCHAR(50), paymentMethod NVARCHAR(100), customerID INT, staffId VARCHAR(20), FOREIGN KEY (customerID) REFERENCES KhachHang(customerID), FOREIGN KEY (staffId) REFERENCES NhanVien(staffId))",
+        "IF OBJECT_ID('DonHang', 'U') IS NULL CREATE TABLE DonHang (orderId VARCHAR(30) PRIMARY KEY, orderDate VARCHAR(50), totalAmount INT, shippingAddress NVARCHAR(MAX), status NVARCHAR(50), paymentMethod NVARCHAR(100), customerPhone VARCHAR(50), staffId VARCHAR(20), FOREIGN KEY (customerPhone) REFERENCES KhachHang(phone), FOREIGN KEY (staffId) REFERENCES NhanVien(staffId))",
         "IF OBJECT_ID('ChiTietDonHang', 'U') IS NULL CREATE TABLE ChiTietDonHang (orderId VARCHAR(30), productID VARCHAR(30), quantity INT, unitPrice INT, PRIMARY KEY (orderId, productID), FOREIGN KEY (orderId) REFERENCES DonHang(orderId), FOREIGN KEY (productID) REFERENCES SanPham(productID))");
   }
 
@@ -203,23 +197,6 @@ public class App {
   private static void seedStaff(Connection conn) throws SQLException {
     String sql = "INSERT INTO NhanVien (staffId, staffName, roleName) VALUES (?, ?, ?)";
     insertRows(conn, sql, List.of(List.of("NV001", "Quản trị viên", "Admin")));
-  }
-
-  private static void seedCustomer(Connection conn) throws SQLException {
-    String sql = "INSERT INTO KhachHang (customerID, name, email, phone, address) VALUES (?, ?, ?, ?, ?)";
-    insertRows(conn, sql, List.of(List.of(1, "Nguyễn Văn An", "an@example.com", "0909000001", "TP.HCM")));
-  }
-
-  private static void seedMember(Connection conn) throws SQLException {
-    String sql = "INSERT INTO TheThanhVien (cardID, customerID, point, rank, discountRate) VALUES (?, ?, ?, ?, ?)";
-    insertRows(conn, sql, List.of(List.of("TV-0001", 1, 420, "Đồng", 0.00)));
-  }
-
-  private static void seedPointHistory(Connection conn) throws SQLException {
-    String sql = "INSERT INTO LichSuDiem (date, orderId, points, type, reason) VALUES (?, ?, ?, ?, ?)";
-    insertRows(conn, sql, List.of(
-        List.of("2026-06-01", "DH-100001", 180, "cộng", "Tích lũy đơn hàng DH-100001"),
-        List.of("2026-06-10", "DH-100248", 240, "cộng", "Tích lũy đơn hàng DH-100248")));
   }
 
   private static void seedProducts(Connection conn) throws SQLException {
@@ -265,13 +242,18 @@ public class App {
             "Có", "Công nghệ WindFree không gió lạnh trực tiếp.", 4.8, 97, 58, false, 0, 0),
         List.of("SP_ML_05", "Máy lạnh Toshiba Inverter 1.5HP", "DM_ML", "Toshiba", 8490000, 10990000, 16, "1.5HP",
             "5 sao", "Không", "Bền bỉ, tiết kiệm điện vượt trội.", 4.6, 68, 41, false, 0, 0),
-        List.of("SP_NCD_01", "Nồi cơm nắp gài Kangaroo 3 lít", "DM_NCD", "Kangaroo", 450000, 650000, 50, "3 lít", "4 sao", "Không", "Nồi cơm điện dung tích lớn dành cho gia đình.", 4.5, 42, 100, false, 0, 0),
-        List.of("SP_LVS_01", "Lò vi sóng Sharp 20 lít", "DM_LVS", "Sharp", 1290000, 1590000, 30, "20 lít", "4 sao", "Không", "Lò vi sóng cơ bền bỉ, dễ sử dụng.", 4.6, 50, 120, false, 0, 0),
-        List.of("SP_MHB_01", "Máy hút bụi Electrolux", "DM_MHB", "Electrolux", 2490000, 2990000, 25, "1.5 lít", "5 sao", "Có", "Máy hút bụi công suất cao, lọc bụi mịn.", 4.8, 65, 85, false, 0, 0),
-        List.of("SP_MLN_01", "Máy lọc nước Karofi 10 lõi", "DM_MLN", "Karofi", 4590000, 5590000, 15, "10 lít", "5 sao", "Có", "Máy lọc nước tinh khiết, bổ sung khoáng chất.", 4.9, 88, 40, true, 10, 50),
-        List.of("SP_DDB_01", "Bộ nồi inox 3 đáy Sunhouse", "DM_DDB", "Sunhouse", 550000, 750000, 100, "3 món", "4 sao", "Không", "Bộ nồi inox cao cấp, dùng được bếp từ.", 4.7, 150, 300, false, 0, 0),
-        List.of("SP_NTM_01", "Khóa cửa thông minh Xiaomi", "DM_NTM", "Xiaomi", 3290000, 3990000, 20, "1", "5 sao", "Có", "Mở khóa bằng vân tay, mật khẩu, thẻ từ.", 4.8, 70, 60, false, 0, 0)
-    ));
+        List.of("SP_NCD_01", "Nồi cơm nắp gài Kangaroo 3 lít", "DM_NCD", "Kangaroo", 450000, 650000, 50, "3 lít",
+            "4 sao", "Không", "Nồi cơm điện dung tích lớn dành cho gia đình.", 4.5, 42, 100, false, 0, 0),
+        List.of("SP_LVS_01", "Lò vi sóng Sharp 20 lít", "DM_LVS", "Sharp", 1290000, 1590000, 30, "20 lít", "4 sao",
+            "Không", "Lò vi sóng cơ bền bỉ, dễ sử dụng.", 4.6, 50, 120, false, 0, 0),
+        List.of("SP_MHB_01", "Máy hút bụi Electrolux", "DM_MHB", "Electrolux", 2490000, 2990000, 25, "1.5 lít", "5 sao",
+            "Có", "Máy hút bụi công suất cao, lọc bụi mịn.", 4.8, 65, 85, false, 0, 0),
+        List.of("SP_MLN_01", "Máy lọc nước Karofi 10 lõi", "DM_MLN", "Karofi", 4590000, 5590000, 15, "10 lít", "5 sao",
+            "Có", "Máy lọc nước tinh khiết, bổ sung khoáng chất.", 4.9, 88, 40, true, 10, 50),
+        List.of("SP_DDB_01", "Bộ nồi inox 3 đáy Sunhouse", "DM_DDB", "Sunhouse", 550000, 750000, 100, "3 món", "4 sao",
+            "Không", "Bộ nồi inox cao cấp, dùng được bếp từ.", 4.7, 150, 300, false, 0, 0),
+        List.of("SP_NTM_01", "Khóa cửa thông minh Xiaomi", "DM_NTM", "Xiaomi", 3290000, 3990000, 20, "1", "5 sao", "Có",
+            "Mở khóa bằng vân tay, mật khẩu, thẻ từ.", 4.8, 70, 60, false, 0, 0)));
   }
 
   private static void insertRows(Connection conn, String sql, List<List<Object>> rows) throws SQLException {
@@ -405,7 +387,7 @@ public class App {
       String shippingAddress = data.get("shippingAddress");
       String status = data.get("status");
       String paymentMethod = data.get("paymentMethod");
-      int customerID = Integer.parseInt(data.get("customerID"));
+      String customerPhone = data.get("customerPhone");
       String staffId = data.get("staffId");
 
       int itemCount = Integer.parseInt(data.get("itemCount"));
@@ -414,14 +396,14 @@ public class App {
         conn.setAutoCommit(false);
         try {
           try (PreparedStatement ps = conn.prepareStatement(
-              "INSERT INTO DonHang (orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerID, staffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+              "INSERT INTO DonHang (orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerPhone, staffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setString(1, orderId);
             ps.setString(2, orderDate);
             ps.setInt(3, totalAmount);
             ps.setString(4, shippingAddress);
             ps.setString(5, status);
             ps.setString(6, paymentMethod);
-            ps.setInt(7, customerID);
+            ps.setString(7, customerPhone);
             ps.setString(8, staffId);
             ps.executeUpdate();
           }
@@ -447,8 +429,10 @@ public class App {
             } else if (orderDate != null) {
               dateOnly = orderDate;
             }
-            updateMemberPointsAndHistory(conn, customerID, earnedPoints, "add", orderId, "cộng",
-                "Tích lũy đơn hàng " + orderId, dateOnly);
+            if (customerPhone != null && !customerPhone.isBlank()) {
+              updateMemberPointsAndHistory(conn, customerPhone, earnedPoints, "add", orderId, "cộng",
+                  "Tích lũy đơn hàng " + orderId, dateOnly);
+            }
           }
 
           conn.commit();
@@ -473,7 +457,7 @@ public class App {
       String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
       Map<String, String> data = parseFormData(body);
 
-      int customerID = Integer.parseInt(data.getOrDefault("customerID", "1"));
+      String customerPhone = data.getOrDefault("customerPhone", "");
       int pointsChange = Integer.parseInt(data.getOrDefault("pointsChange", "0"));
       String action = data.getOrDefault("action", "add");
       String orderId = data.getOrDefault("orderId", "VOUCHER");
@@ -485,7 +469,9 @@ public class App {
       try (Connection conn = getConnection()) {
         conn.setAutoCommit(false);
         try {
-          updateMemberPointsAndHistory(conn, customerID, pointsChange, action, orderId, type, reason, date);
+          if (customerPhone != null && !customerPhone.isBlank()) {
+            updateMemberPointsAndHistory(conn, customerPhone, pointsChange, action, orderId, type, reason, date);
+          }
           conn.commit();
           send(exchange, 200, "{\"success\":true}", "application/json; charset=utf-8");
         } catch (SQLException e) {
@@ -499,7 +485,8 @@ public class App {
     }
   }
 
-  private static void updateMemberPointsAndHistory(Connection conn, int customerID, int pointsChange, String action,
+  private static void updateMemberPointsAndHistory(Connection conn, String customerPhone, int pointsChange,
+      String action,
       String orderId, String type, String reason, String date) throws SQLException {
     int currentPoints = 0;
     String currentRank = "Đồng";
@@ -507,8 +494,8 @@ public class App {
     boolean hasMember = false;
 
     try (PreparedStatement ps = conn
-        .prepareStatement("SELECT point, rank, discountRate FROM TheThanhVien WHERE customerID = ?")) {
-      ps.setInt(1, customerID);
+        .prepareStatement("SELECT point, rank, discountRate FROM TheThanhVien WHERE phone = ?")) {
+      ps.setString(1, customerPhone);
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
           currentPoints = rs.getInt("point");
@@ -565,11 +552,11 @@ public class App {
     }
 
     try (PreparedStatement ps = conn
-        .prepareStatement("UPDATE TheThanhVien SET point = ?, rank = ?, discountRate = ? WHERE customerID = ?")) {
+        .prepareStatement("UPDATE TheThanhVien SET point = ?, rank = ?, discountRate = ? WHERE phone = ?")) {
       ps.setInt(1, newPoints);
       ps.setString(2, newRank);
       ps.setDouble(3, newDiscountRate);
-      ps.setInt(4, customerID);
+      ps.setString(4, customerPhone);
       ps.executeUpdate();
     }
 
@@ -581,6 +568,65 @@ public class App {
       ps.setString(4, type);
       ps.setString(5, reason);
       ps.executeUpdate();
+    }
+  }
+
+  private static void handleRegisterMember(HttpExchange exchange) throws IOException {
+    if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+      send(exchange, 405, "{\"error\":\"Method not allowed\"}", "application/json; charset=utf-8");
+      return;
+    }
+    try {
+      String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+      Map<String, String> data = parseFormData(body);
+
+      String phone = data.get("phone");
+      String name = data.get("name");
+      String address = data.get("address");
+
+      if (phone == null || phone.isBlank()) {
+        send(exchange, 400, "{\"error\":\"Missing phone\"}", "application/json; charset=utf-8");
+        return;
+      }
+
+      try (Connection conn = getConnection()) {
+        conn.setAutoCommit(false);
+        try {
+          try (PreparedStatement ps = conn.prepareStatement(
+              "IF EXISTS (SELECT 1 FROM KhachHang WHERE phone = ?) " +
+                  "UPDATE KhachHang SET name = ?, address = ? WHERE phone = ? " +
+                  "ELSE INSERT INTO KhachHang (phone, name, address) VALUES (?, ?, ?)")) {
+            ps.setString(1, phone);
+            ps.setString(2, name);
+            ps.setString(3, address);
+            ps.setString(4, phone);
+            ps.setString(5, phone);
+            ps.setString(6, name);
+            ps.setString(7, address);
+            ps.executeUpdate();
+          }
+
+          try (PreparedStatement ps = conn.prepareStatement(
+              "IF EXISTS (SELECT 1 FROM TheThanhVien WHERE phone = ?) " +
+                  "UPDATE TheThanhVien SET point = 0, rank = N'Đồng', discountRate = 0.00 WHERE phone = ? " +
+                  "ELSE INSERT INTO TheThanhVien (cardID, phone, point, rank, discountRate) VALUES (?, ?, 0, N'Đồng', 0.00)")) {
+            ps.setString(1, phone);
+            ps.setString(2, phone);
+            ps.setString(3, "TV-" + phone);
+            ps.setString(4, phone);
+            ps.executeUpdate();
+          }
+
+          conn.commit();
+          send(exchange, 200, "{\"success\":true}", "application/json; charset=utf-8");
+        } catch (SQLException e) {
+          conn.rollback();
+          throw e;
+        }
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      send(exchange, 500, "{\"error\":\"" + escapeJson(ex.getMessage()) + "\"}", "application/json; charset=utf-8");
     }
   }
 
