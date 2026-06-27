@@ -223,7 +223,7 @@ public class App {
 
   private static void seedMember(Connection conn) throws SQLException {
     String sql = "INSERT INTO TheThanhVien (cardID, customerID, point, rank, discountRate) VALUES (?, ?, ?, ?, ?)";
-    insertRows(conn, sql, List.of(List.of("TV-0001", 1, 420, "Bạc", 0.00)));
+    insertRows(conn, sql, List.of(List.of("TV-0001", 1, 420, "Đồng", 0.00)));
   }
 
   private static void seedPointHistory(Connection conn) throws SQLException {
@@ -480,7 +480,7 @@ public class App {
 
   private static void updateMemberPointsAndHistory(Connection conn, int customerID, int pointsChange, String action, String orderId, String type, String reason, String date) throws SQLException {
     int currentPoints = 0;
-    String currentRank = "Bạc";
+    String currentRank = "Đồng";
     double discountRate = 0.00;
     boolean hasMember = false;
     
@@ -506,15 +506,35 @@ public class App {
     
     if ("cancel".equalsIgnoreCase(action)) {
       newPoints = 0;
-      newRank = "Bạc";
+      newRank = "Đồng";
       newDiscountRate = 0.00;
     } else {
       newPoints = currentPoints + pointsChange;
       if (newPoints < 0) newPoints = 0;
       
-      if ("Bạc".equals(currentRank) && newPoints >= 1000) {
-        newRank = "Vàng";
-        newDiscountRate = 0.10;
+      if (pointsChange > 0) {
+        int targetVal = 1;
+        String targetRank = "Đồng";
+        double targetRate = 0.00;
+        
+        if (newPoints >= 2000) {
+          targetVal = 3;
+          targetRank = "Vàng";
+          targetRate = 0.10;
+        } else if (newPoints >= 1000) {
+          targetVal = 2;
+          targetRank = "Bạc";
+          targetRate = 0.05;
+        }
+        
+        int currentVal = 1;
+        if ("Vàng".equals(currentRank)) currentVal = 3;
+        else if ("Bạc".equals(currentRank)) currentVal = 2;
+        
+        if (targetVal > currentVal) {
+          newRank = targetRank;
+          newDiscountRate = targetRate;
+        }
       }
     }
     

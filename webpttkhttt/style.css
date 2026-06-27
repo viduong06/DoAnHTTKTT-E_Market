@@ -2010,10 +2010,22 @@ img {
   justify-content: space-between;
 }
 
+.membership-card.bronze {
+  background: linear-gradient(135deg, #854d0e 0%, #451a03 100%);
+  box-shadow: 0 20px 40px rgba(69, 26, 3, 0.25);
+  border-color: rgba(251, 191, 36, 0.25);
+}
+
+.membership-card.silver {
+  background: linear-gradient(135deg, #64748b 0%, #334155 100%);
+  box-shadow: 0 20px 40px rgba(51, 65, 85, 0.25);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
 .membership-card.gold {
   background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
   box-shadow: 0 20px 40px rgba(120, 53, 15, 0.3);
-  border-color: rgba(251, 191, 36, 0.3);
+  border-color: rgba(251, 191, 36, 0.35);
 }
 
 .membership-card-glow {

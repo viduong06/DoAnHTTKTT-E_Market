@@ -917,9 +917,30 @@ function initCheckoutPage() {
       if (member) {
         const earnedPoints = Math.floor(finalTotal / 20000);
         member.point += earnedPoints;
-        if (member.point >= 1000 && member.rank === "Bạc") {
-          member.rank = "Vàng";
-          member.discountRate = 0.10;
+        if (member.isCancelled) {
+          member.isCancelled = false;
+        }
+        
+        let targetRank = "Đồng";
+        let targetRate = 0.00;
+        let targetVal = 1;
+        if (member.point >= 2000) {
+          targetRank = "Vàng";
+          targetRate = 0.10;
+          targetVal = 3;
+        } else if (member.point >= 1000) {
+          targetRank = "Bạc";
+          targetRate = 0.05;
+          targetVal = 2;
+        }
+        
+        let currentVal = 1;
+        if (member.rank === "Vàng") currentVal = 3;
+        else if (member.rank === "Bạc") currentVal = 2;
+        
+        if (targetVal > currentVal) {
+          member.rank = targetRank;
+          member.discountRate = targetRate;
         }
         localStorage.setItem("TheThanhVien", JSON.stringify(member));
 
@@ -965,8 +986,23 @@ function initProfilePage() {
   const pointsVal = document.getElementById("member-points-value");
   const tierVal = document.getElementById("member-tier-value");
 
-  if (cardContainer && member.rank === "Vàng") {
-    cardContainer.classList.add("gold");
+  if (cardContainer) {
+    cardContainer.classList.remove("bronze", "silver", "gold");
+    if (member.isCancelled) {
+      cardContainer.style.opacity = "0.4";
+      cardContainer.style.filter = "grayscale(1)";
+    } else {
+      cardContainer.style.opacity = "1";
+      cardContainer.style.filter = "none";
+    }
+
+    if (member.rank === "Vàng") {
+      cardContainer.classList.add("gold");
+    } else if (member.rank === "Bạc") {
+      cardContainer.classList.add("silver");
+    } else {
+      cardContainer.classList.add("bronze");
+    }
   }
 
   if (cardNum) cardNum.innerText = member.cardID;
@@ -977,19 +1013,34 @@ function initProfilePage() {
   const bar = document.getElementById("upgrade-progress-bar");
   const label = document.getElementById("upgrade-progress-label");
   const desc = document.getElementById("upgrade-progress-desc");
+  const upgradeTitle = document.getElementById("upgrade-title");
 
   if (bar && label && desc) {
-    if (member.rank === "Bạc") {
-      const nextRankPoints = 1000;
-      const pct = Math.min(100, (member.point / nextRankPoints) * 100);
+    if (member.isCancelled) {
+      bar.style.width = "0%";
+      label.innerText = "0/1000 điểm";
+      desc.innerText = "Vui lòng đăng ký lại thẻ để kích hoạt tiến trình nâng hạng.";
+      if (upgradeTitle) upgradeTitle.innerText = "Tiến độ nâng hạng (Thẻ chưa kích hoạt)";
+    } else if (member.rank === "Đồng") {
+      const pct = Math.min(100, (member.point / 1000) * 100);
       bar.style.width = `${pct}%`;
+      bar.style.background = "linear-gradient(90deg, #854d0e 0%, #a16207 100%)";
       label.innerText = `${member.point}/1000 điểm`;
-      desc.innerText = `Tích lũy thêm ${1000 - member.point} điểm nữa để thăng hạng thẻ VÀNG (nhận giảm giá tới 10% đơn hàng)`;
+      desc.innerText = `Tích lũy thêm ${1000 - member.point} điểm nữa để thăng hạng thẻ BẠC (nhận giảm giá tới 5% đơn hàng)`;
+      if (upgradeTitle) upgradeTitle.innerText = "Tiến độ nâng hạng (Thẻ Đồng lên Thẻ Bạc)";
+    } else if (member.rank === "Bạc") {
+      const pct = Math.min(100, (member.point / 2000) * 100);
+      bar.style.width = `${pct}%`;
+      bar.style.background = "linear-gradient(90deg, #64748b 0%, #cbd5e1 100%)";
+      label.innerText = `${member.point}/2000 điểm`;
+      desc.innerText = `Tích lũy thêm ${Math.max(0, 2000 - member.point)} điểm nữa để thăng hạng thẻ VÀNG (nhận giảm giá tới 10% đơn hàng)`;
+      if (upgradeTitle) upgradeTitle.innerText = "Tiến độ nâng hạng (Thẻ Bạc lên Thẻ Vàng)";
     } else {
       bar.style.width = `100%`;
       bar.style.background = "linear-gradient(90deg, #d97706 0%, #fbbf24 100%)";
       label.innerText = `${member.point} điểm`;
       desc.innerText = `Chúc mừng bạn! Bạn đã đạt hạng thẻ VÀNG cao cấp và nhận đặc quyền giảm giá 10% mặc định!`;
+      if (upgradeTitle) upgradeTitle.innerText = "Hạng thẻ cao nhất (Thẻ Vàng)";
     }
   }
 
@@ -1007,6 +1058,10 @@ function initProfilePage() {
 
   window.redeemVoucher = async (cost, voucherName) => {
     let currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
+    if (currentMember.isCancelled) {
+      showToast("Thẻ thành viên của bạn đã bị hủy. Vui lòng đăng ký lại thẻ để đổi voucher!");
+      return;
+    }
     if (currentMember.point < cost) {
       showToast("Không đủ điểm thưởng để đổi voucher này!");
       return;
@@ -1053,51 +1108,116 @@ function initProfilePage() {
   };
 
   const cancelBtn = document.getElementById("btn-cancel-membership");
-  if (cancelBtn) {
-    cancelBtn.onclick = async () => {
-      const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
-      const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+  const cancelTitle = document.querySelector(".cancel-membership-title");
+  const cancelDesc = document.querySelector(".cancel-membership-desc");
 
-      const formData = new URLSearchParams();
-      formData.append("customerID", cust.customerID || 1);
-      formData.append("pointsChange", 0);
-      formData.append("action", "cancel");
-      formData.append("orderId", "HỦY THẺ");
-      formData.append("type", "trừ");
-      formData.append("reason", "Hủy thẻ thành viên (Đặt lại điểm về 0)");
-      formData.append("date", new Date().toISOString().split("T")[0]);
+  if (cancelBtn && cancelTitle && cancelDesc) {
+    if (member.isCancelled) {
+      cancelTitle.innerText = "Đăng Ký Thành Viên";
+      cancelTitle.style.color = "var(--success)";
+      cancelDesc.innerText = "Đăng ký lại thẻ thành viên để nhận đặc quyền tích điểm thưởng và nâng hạng thẻ.";
+      cancelBtn.innerText = "Đăng Ký Lại";
+      cancelBtn.className = "btn btn-blue";
+      cancelBtn.onclick = async () => {
+        const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
+        const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
 
-      try {
-        const res = await fetch(`${API_BASE}/api/member/update-points`, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: formData.toString()
-        });
-        if (!res.ok) {
-          console.error("Backend member cancellation failed");
+        const formData = new URLSearchParams();
+        formData.append("customerID", cust.customerID || 1);
+        formData.append("pointsChange", 0);
+        formData.append("action", "register");
+        formData.append("orderId", "ĐĂNG KÝ");
+        formData.append("type", "cộng");
+        formData.append("reason", "Đăng ký lại thẻ thành viên");
+        formData.append("date", new Date().toISOString().split("T")[0]);
+
+        try {
+          const res = await fetch(`${API_BASE}/api/member/update-points`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData.toString()
+          });
+          if (!res.ok) {
+            console.error("Backend member registration failed");
+          }
+        } catch (err) {
+          console.error("Backend member registration request failed:", err);
         }
-      } catch (err) {
-        console.error("Backend member cancellation request failed:", err);
-      }
 
-      currentMember.point = 0;
-      currentMember.rank = "Bạc";
-      currentMember.discountRate = 0.00;
-      localStorage.setItem("TheThanhVien", JSON.stringify(currentMember));
-      
-      const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
-      currentHistory.unshift({
-        date: new Date().toISOString().split("T")[0],
-        orderId: "HỦY THẺ",
-        points: 0,
-        type: "trừ",
-        reason: "Hủy thẻ thành viên (Đặt lại điểm về 0)"
-      });
-      localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
-      
-      initProfilePage();
-      showToast("Đã đặt lại thông tin và hủy đặc quyền thẻ thành viên thành công!");
-    };
+        currentMember.isCancelled = false;
+        currentMember.point = 0;
+        currentMember.rank = "Đồng";
+        currentMember.discountRate = 0.00;
+        localStorage.setItem("TheThanhVien", JSON.stringify(currentMember));
+
+        const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+        currentHistory.unshift({
+          date: new Date().toISOString().split("T")[0],
+          orderId: "ĐĂNG KÝ",
+          points: 0,
+          type: "cộng",
+          reason: "Đăng ký lại thẻ thành viên"
+        });
+        localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
+
+        initProfilePage();
+        showToast("Đăng ký lại thẻ thành viên thành công! Bạn đang ở hạng thẻ Đồng.");
+      };
+    } else {
+      cancelTitle.innerText = "Hủy Tư Cách Thành Viên";
+      cancelTitle.style.color = "var(--danger)";
+      cancelDesc.innerText = "Lưu ý: Hành động này sẽ đặt lại điểm tích lũy của bạn về 0 và thu hồi toàn bộ ưu đãi giảm giá.";
+      cancelBtn.innerText = "Hủy Thành Viên";
+      cancelBtn.className = "btn btn-danger";
+      cancelBtn.onclick = async () => {
+        if (!confirm("Bạn có chắc chắn muốn hủy tư cách thành viên không? Điểm tích lũy sẽ bị đặt về 0.")) {
+          return;
+        }
+        const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
+        const cust = JSON.parse(localStorage.getItem("KhachHang")) || { customerID: 1 };
+
+        const formData = new URLSearchParams();
+        formData.append("customerID", cust.customerID || 1);
+        formData.append("pointsChange", 0);
+        formData.append("action", "cancel");
+        formData.append("orderId", "HỦY THẺ");
+        formData.append("type", "trừ");
+        formData.append("reason", "Hủy thẻ thành viên (Đặt lại điểm về 0)");
+        formData.append("date", new Date().toISOString().split("T")[0]);
+
+        try {
+          const res = await fetch(`${API_BASE}/api/member/update-points`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData.toString()
+          });
+          if (!res.ok) {
+            console.error("Backend member cancellation failed");
+          }
+        } catch (err) {
+          console.error("Backend member cancellation request failed:", err);
+        }
+
+        currentMember.isCancelled = true;
+        currentMember.point = 0;
+        currentMember.rank = "Đồng";
+        currentMember.discountRate = 0.00;
+        localStorage.setItem("TheThanhVien", JSON.stringify(currentMember));
+
+        const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+        currentHistory.unshift({
+          date: new Date().toISOString().split("T")[0],
+          orderId: "HỦY THẺ",
+          points: 0,
+          type: "trừ",
+          reason: "Hủy thẻ thành viên (Đặt lại điểm về 0)"
+        });
+        localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
+
+        initProfilePage();
+        showToast("Đã hủy thẻ thành viên thành công! Điểm số được đặt lại về 0.");
+      };
+    }
   }
 }
 
