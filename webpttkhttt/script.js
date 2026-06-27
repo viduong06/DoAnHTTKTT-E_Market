@@ -574,38 +574,6 @@ function initDetailPage() {
       `).join("");
     }
   }
-
-  const currentCompare = document.getElementById("dp-compare-current");
-  const alternateCompare = document.getElementById("dp-compare-alternate");
-  if (currentCompare && alternateCompare) {
-    const compProduct = products.find(item => item.categoryID === p.categoryID && item.productID !== p.productID) || products.find(item => item.productID !== p.productID);
-    
-    currentCompare.innerHTML = `
-      <div class="compare-col-header">${p.productName}</div>
-      <div class="compare-price">${formatPrice(p.priceProduct)}</div>
-      <div class="compare-list">
-        <div class="compare-item"><span>Hãng</span><span>${p.brand}</span></div>
-        <div class="compare-item"><span>Dung tích</span><span>${p.capacity}</span></div>
-        <div class="compare-item"><span>Tiết kiệm điện</span><span>${p.energySaving}</span></div>
-        <div class="compare-item"><span>Thông minh</span><span>${p.smartFeature}</span></div>
-        <div class="compare-item"><span>Đánh giá</span><span>${p.rating} ★</span></div>
-      </div>
-    `;
-
-    if (compProduct) {
-      alternateCompare.innerHTML = `
-        <div class="compare-col-header">${compProduct.productName}</div>
-        <div class="compare-price">${formatPrice(compProduct.priceProduct)}</div>
-        <div class="compare-list">
-          <div class="compare-item"><span>Hãng</span><span>${compProduct.brand}</span></div>
-          <div class="compare-item"><span>Dung tích</span><span>${compProduct.capacity}</span></div>
-          <div class="compare-item"><span>Tiết kiệm điện</span><span>${compProduct.energySaving}</span></div>
-          <div class="compare-item"><span>Thông minh</span><span>${compProduct.smartFeature}</span></div>
-          <div class="compare-item"><span>Đánh giá</span><span>${compProduct.rating} ★</span></div>
-        </div>
-      `;
-    }
-  }
 }
 
 function renderCartList() {
