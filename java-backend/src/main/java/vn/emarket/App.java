@@ -76,8 +76,8 @@ public class App {
         + "\"DanhMuc\":" + tableJson("DanhMuc") + ","
         + "\"NhanVien\":" + tableJson("NhanVien") + ","
         + "\"SanPham\":" + tableJson("SanPham") + ","
-        + "\"KhachHang\":" + firstRowJson("KhachHang", "{}") + ","
-        + "\"TheThanhVien\":" + firstRowJson("TheThanhVien", "null") + ","
+        + "\"KhachHang\":" + tableJson("KhachHang") + ","
+        + "\"TheThanhVien\":" + tableJson("TheThanhVien") + ","
         + "\"LichSuDiem\":" + tableJson("LichSuDiem")
         + "}";
   }
@@ -152,6 +152,13 @@ public class App {
       for (String sql : schemaStatements()) {
         stmt.execute(sql);
       }
+      // Dọn dẹp các bản ghi lịch sử lỗi của phiên bản trước
+      try {
+        stmt.execute(
+            "DELETE FROM LichSuDiem WHERE orderId IN ('ĐĂNG KÝ', 'HỦY THẺ', 'H?Y TH?') OR type = 'trừ' AND reason LIKE 'Hủy thẻ%'");
+      } catch (Exception e) {
+        System.out.println("Cleanup old history failed: " + e.getMessage());
+      }
     }
 
     if (tableCount("SanPham") > 0) {
@@ -173,7 +180,8 @@ public class App {
         "IF OBJECT_ID('NhanVien', 'U') IS NULL CREATE TABLE NhanVien (staffId VARCHAR(20) PRIMARY KEY, staffName NVARCHAR(255), roleName NVARCHAR(100))",
         "IF OBJECT_ID('KhachHang', 'U') IS NULL CREATE TABLE KhachHang (phone VARCHAR(50) PRIMARY KEY, name NVARCHAR(255), address NVARCHAR(MAX))",
         "IF OBJECT_ID('TheThanhVien', 'U') IS NULL CREATE TABLE TheThanhVien (cardID VARCHAR(30) PRIMARY KEY, phone VARCHAR(50), point INT, rank NVARCHAR(50), discountRate DECIMAL(4,2), FOREIGN KEY (phone) REFERENCES KhachHang(phone))",
-        "IF OBJECT_ID('LichSuDiem', 'U') IS NULL CREATE TABLE LichSuDiem (historyID INT IDENTITY(1,1) PRIMARY KEY, date VARCHAR(20), orderId VARCHAR(30), points INT, type NVARCHAR(20), reason NVARCHAR(MAX))",
+        "IF OBJECT_ID('LichSuDiem', 'U') IS NULL CREATE TABLE LichSuDiem (historyID INT IDENTITY(1,1) PRIMARY KEY, phone VARCHAR(50), date VARCHAR(20), orderId VARCHAR(30), points INT, type NVARCHAR(20), reason NVARCHAR(MAX))",
+        "IF NOT EXISTS(SELECT * FROM sys.columns WHERE Name = N'phone' AND Object_ID = Object_ID(N'LichSuDiem')) ALTER TABLE LichSuDiem ADD phone VARCHAR(50)",
         "IF OBJECT_ID('SanPham', 'U') IS NULL CREATE TABLE SanPham (productID VARCHAR(30) PRIMARY KEY, productName NVARCHAR(255) NOT NULL, categoryID VARCHAR(20), brand NVARCHAR(100), priceProduct INT NOT NULL, originalPrice INT NOT NULL, quantityProduct INT DEFAULT 0, capacity NVARCHAR(100), energySaving NVARCHAR(50), smartFeature NVARCHAR(50), descriptionProduct NVARCHAR(MAX), rating DECIMAL(3,1), reviewsCount INT DEFAULT 0, soldCount INT DEFAULT 0, isFlashSale BIT DEFAULT 0, soldFlash INT DEFAULT 0, limitFlash INT DEFAULT 0, FOREIGN KEY (categoryID) REFERENCES DanhMuc(categoryID))",
         "IF OBJECT_ID('DonHang', 'U') IS NULL CREATE TABLE DonHang (orderId VARCHAR(30) PRIMARY KEY, orderDate VARCHAR(50), totalAmount INT, shippingAddress NVARCHAR(MAX), status NVARCHAR(50), paymentMethod NVARCHAR(100), customerPhone VARCHAR(50), staffId VARCHAR(20), FOREIGN KEY (customerPhone) REFERENCES KhachHang(phone), FOREIGN KEY (staffId) REFERENCES NhanVien(staffId))",
         "IF OBJECT_ID('ChiTietDonHang', 'U') IS NULL CREATE TABLE ChiTietDonHang (orderId VARCHAR(30), productID VARCHAR(30), quantity INT, unitPrice INT, PRIMARY KEY (orderId, productID), FOREIGN KEY (orderId) REFERENCES DonHang(orderId), FOREIGN KEY (productID) REFERENCES SanPham(productID))");
@@ -395,6 +403,26 @@ public class App {
       try (Connection conn = getConnection()) {
         conn.setAutoCommit(false);
         try {
+          String customerName = data.get("customerName");
+          String customerAddress = data.get("customerAddress");
+
+          // Đảm bảo KhachHang có tồn tại với tên và địa chỉ mới nhất
+          if (customerPhone != null && !customerPhone.isBlank()) {
+            try (PreparedStatement ps = conn.prepareStatement(
+                "IF EXISTS (SELECT 1 FROM KhachHang WHERE phone = ?) " +
+                    "UPDATE KhachHang SET name = ?, address = ? WHERE phone = ? " +
+                    "ELSE INSERT INTO KhachHang (phone, name, address) VALUES (?, ?, ?)")) {
+              ps.setString(1, customerPhone);
+              ps.setString(2, customerName != null ? customerName : "");
+              ps.setString(3, customerAddress != null ? customerAddress : "");
+              ps.setString(4, customerPhone);
+              ps.setString(5, customerPhone);
+              ps.setString(6, customerName != null ? customerName : "");
+              ps.setString(7, customerAddress != null ? customerAddress : "");
+              ps.executeUpdate();
+            }
+          }
+
           try (PreparedStatement ps = conn.prepareStatement(
               "INSERT INTO DonHang (orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerPhone, staffId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
             ps.setString(1, orderId);
@@ -515,9 +543,15 @@ public class App {
     double newDiscountRate = discountRate;
 
     if ("cancel".equalsIgnoreCase(action)) {
-      newPoints = 0;
-      newRank = "Đồng";
-      newDiscountRate = 0.00;
+      try (PreparedStatement ps = conn.prepareStatement("DELETE FROM TheThanhVien WHERE phone = ?")) {
+        ps.setString(1, customerPhone);
+        ps.executeUpdate();
+      }
+      try (PreparedStatement ps = conn.prepareStatement("DELETE FROM LichSuDiem WHERE phone = ?")) {
+        ps.setString(1, customerPhone);
+        ps.executeUpdate();
+      }
+      return;
     } else {
       newPoints = currentPoints + pointsChange;
       if (newPoints < 0)
@@ -560,14 +594,18 @@ public class App {
       ps.executeUpdate();
     }
 
-    try (PreparedStatement ps = conn
-        .prepareStatement("INSERT INTO LichSuDiem (date, orderId, points, type, reason) VALUES (?, ?, ?, ?, ?)")) {
-      ps.setString(1, date);
-      ps.setString(2, orderId);
-      ps.setInt(3, pointsChange);
-      ps.setString(4, type);
-      ps.setString(5, reason);
-      ps.executeUpdate();
+    if (!"register".equals(action)) {
+      try (PreparedStatement ps = conn
+          .prepareStatement(
+              "INSERT INTO LichSuDiem (phone, date, orderId, points, type, reason) VALUES (?, ?, ?, ?, ?, ?)")) {
+        ps.setString(1, customerPhone);
+        ps.setString(2, date);
+        ps.setString(3, orderId);
+        ps.setInt(4, pointsChange);
+        ps.setString(5, type);
+        ps.setString(6, reason);
+        ps.executeUpdate();
+      }
     }
   }
 

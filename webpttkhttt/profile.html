@@ -83,23 +83,42 @@
       <aside class="profile-menu">
         <div class="profile-user-summary">
           <div class="profile-avatar">
-            <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=120&h=120&fit=crop&crop=face"
-              alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+            <svg viewBox="0 0 24 24" fill="#cbd5e1" width="100%" height="100%" style="border-radius:50%; background:#f8fafc; padding: 10px;">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
           </div>
-          <div class="profile-username">Phan Thanh Hải</div>
-          <span class="profile-user-rank">Thành Viên VIP</span>
+          <div class="profile-username" id="sidebar-username">Khách</div>
+          <span class="profile-user-rank" id="sidebar-userrank">Chưa đăng ký</span>
         </div>
 
         <div class="profile-nav">
-          <div class="profile-nav-item">Đơn hàng của tôi</div>
+          <div class="profile-nav-item" id="nav-my-orders" onclick="switchTab('my-orders')">Đơn hàng của tôi</div>
           <div class="profile-nav-item active" id="nav-member-card" onclick="switchTab('member-card')">Thẻ thành viên
-          </div>
-          <div class="profile-nav-item" id="nav-personal-info" onclick="switchTab('personal-info')">Thông tin cá nhân
           </div>
         </div>
       </aside>
 
       <main class="profile-content">
+        <div id="tab-my-orders" style="display: none;">
+          <h2 class="profile-section-title">Đơn Hàng Của Tôi</h2>
+          <div class="table-wrapper">
+            <table class="points-table">
+              <thead>
+                <tr>
+                  <th>Mã Đơn Hàng</th>
+                  <th>Ngày Đặt</th>
+                  <th>Tổng Tiền</th>
+                  <th>Trạng Thái</th>
+                  <th>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="my-orders-table-body">
+                <!-- Orders will be injected here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div id="tab-member-card">
           <h2 class="profile-section-title">Quản Lý Thẻ Thành Viên</h2>
 
@@ -213,15 +232,6 @@
                 style="width: 100%; text-align: left; padding: 10px; border-radius: 6px; border: 1px solid var(--border);"
                 required>
             </div>
-            <div style="margin-bottom: 16px;">
-              <label style="display: block; font-weight: 600; margin-bottom: 8px;">Giới Tính</label>
-              <select id="pi-gender" class="quantity-input"
-                style="width: 100%; text-align: left; padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
-              </select>
-            </div>
             <div style="margin-bottom: 24px;">
               <label style="display: block; font-weight: 600; margin-bottom: 8px;">Địa Chỉ</label>
               <input type="text" id="pi-address" class="quantity-input"
@@ -232,6 +242,18 @@
           </form>
         </div>
       </main>
+    </div>
+  </div>
+
+  <div id="cancel-order-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: #fff; padding: 24px; border-radius: var(--radius); width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+      <h3 style="margin-bottom: 16px; color: var(--primary);">Hủy Đơn Hàng <span id="cancel-modal-order-id"></span></h3>
+      <p style="margin-bottom: 12px; color: var(--gray); font-size: 0.9rem;">Vui lòng cho chúng tôi biết lý do bạn muốn hủy đơn hàng này.</p>
+      <textarea id="cancel-order-reason" rows="4" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 20px; font-family: inherit; resize: vertical;" placeholder="Nhập lý do hủy..."></textarea>
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="btn" style="background: var(--light); color: var(--gray);" onclick="closeCancelOrderModal()">Quay lại</button>
+        <button class="btn btn-danger" onclick="submitCancelOrder()">Xác nhận hủy</button>
+      </div>
     </div>
   </div>
 

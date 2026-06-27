@@ -174,7 +174,6 @@
         const idx = orders.findIndex(o => o.orderId === orderId);
         if (idx > -1) { orders[idx].status = status; localStorage.setItem("DonHang", JSON.stringify(orders)); }
       }
-      currentStatusFilter = status;
       loadOrders();
     }
 

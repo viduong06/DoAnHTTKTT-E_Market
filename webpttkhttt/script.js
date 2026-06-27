@@ -34,9 +34,19 @@ async function initDatabase() {
     localStorage.setItem("DanhMuc", JSON.stringify(db.DanhMuc || []));
     localStorage.setItem("NhanVien", JSON.stringify(db.NhanVien || []));
     localStorage.setItem("SanPham", JSON.stringify(db.SanPham || []));
-    localStorage.setItem("TheThanhVien", JSON.stringify(db.TheThanhVien || null));
-    localStorage.setItem("KhachHang", JSON.stringify(db.KhachHang || null));
     localStorage.setItem("LichSuDiem", JSON.stringify(db.LichSuDiem || []));
+
+    const currentCust = JSON.parse(localStorage.getItem("KhachHang"));
+    const phone = currentCust ? currentCust.phone : null;
+    if (phone) {
+      const myCust = (db.KhachHang || []).find(c => c.phone === phone);
+      const myMember = (db.TheThanhVien || []).find(m => m.phone === phone);
+      localStorage.setItem("KhachHang", JSON.stringify(myCust || null));
+      localStorage.setItem("TheThanhVien", JSON.stringify(myMember || null));
+    } else {
+      if (!localStorage.getItem("KhachHang")) localStorage.setItem("KhachHang", JSON.stringify(null));
+      if (!localStorage.getItem("TheThanhVien")) localStorage.setItem("TheThanhVien", JSON.stringify(null));
+    }
   } catch (err) {
     console.error("Cannot load database from Java backend.", err);
 
@@ -821,6 +831,16 @@ function initCheckoutPage() {
     };
   });
 
+  const custData = JSON.parse(localStorage.getItem("KhachHang"));
+  if (custData) {
+    const coName = document.getElementById("co-name");
+    const coPhone = document.getElementById("co-phone");
+    const coAddress = document.getElementById("co-address");
+    if (coName && custData.name) coName.value = custData.name;
+    if (coPhone && custData.phone) coPhone.value = custData.phone;
+    if (coAddress && custData.address) coAddress.value = custData.address;
+  }
+
   const orderForm = document.getElementById("checkout-order-form");
   if (orderForm) {
     orderForm.onsubmit = async (e) => {
@@ -854,7 +874,9 @@ function initCheckoutPage() {
       formData.append("shippingAddress", `${address} | SĐT: ${phone} | Người nhận: ${fullName}`);
       formData.append("status", "Chờ xác nhận");
       formData.append("paymentMethod", payMethod);
-      formData.append("customerPhone", cust.phone || "");
+      formData.append("customerPhone", phone);
+      formData.append("customerName", fullName);
+      formData.append("customerAddress", address);
       formData.append("staffId", "NV001");
 
       formData.append("itemCount", items.length);
@@ -907,46 +929,33 @@ function initCheckoutPage() {
       console.log("[DEBUG] Đã lưu đơn hàng:", newOrderId, "| DonHang hiện tại:", donHang.length, "đơn");
 
       const member = JSON.parse(localStorage.getItem("TheThanhVien"));
-      if (member) {
-        const earnedPoints = Math.floor(finalTotal / 20000);
+      const earnedPoints = Math.floor(finalTotal / 20000);
+      
+      if (member && member.phone === phone) {
         member.point += earnedPoints;
         if (member.isCancelled) {
           member.isCancelled = false;
         }
-
-        let targetRank = "Đồng";
-        let targetRate = 0.00;
-        let targetVal = 1;
         if (member.point >= 2000) {
-          targetRank = "Vàng";
-          targetRate = 0.10;
-          targetVal = 3;
+          member.rank = "Vàng";
+          member.discountRate = 0.10;
         } else if (member.point >= 1000) {
-          targetRank = "Bạc";
-          targetRate = 0.05;
-          targetVal = 2;
-        }
-
-        let currentVal = 1;
-        if (member.rank === "Vàng") currentVal = 3;
-        else if (member.rank === "Bạc") currentVal = 2;
-
-        if (targetVal > currentVal) {
-          member.rank = targetRank;
-          member.discountRate = targetRate;
+          member.rank = "Bạc";
+          member.discountRate = 0.05;
         }
         localStorage.setItem("TheThanhVien", JSON.stringify(member));
-
-        const history = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
-        history.unshift({
-          date: new Date().toISOString().split("T")[0],
-          orderId: newOrderId,
-          points: earnedPoints,
-          type: "cộng",
-          reason: `Tích lũy đơn hàng ${newOrderId}`
-        });
-        localStorage.setItem("LichSuDiem", JSON.stringify(history));
       }
+
+      const history = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+      history.unshift({
+        phone: phone,
+        date: new Date().toISOString().split("T")[0],
+        orderId: newOrderId,
+        points: earnedPoints,
+        type: "cộng",
+        reason: `Tích lũy đơn hàng ${newOrderId}`
+      });
+      localStorage.setItem("LichSuDiem", JSON.stringify(history));
 
       localStorage.setItem("ChiTietGioHang", JSON.stringify([]));
       sessionStorage.removeItem("activeCoupon");
@@ -974,9 +983,11 @@ window.switchTab = function (tabName) {
 
   const tabMemberCard = document.getElementById('tab-member-card');
   const tabPersonalInfo = document.getElementById('tab-personal-info');
+  const tabMyOrders = document.getElementById('tab-my-orders');
 
   if (tabMemberCard) tabMemberCard.style.display = 'none';
   if (tabPersonalInfo) tabPersonalInfo.style.display = 'none';
+  if (tabMyOrders) tabMyOrders.style.display = 'none';
 
   const activeTab = document.getElementById('tab-' + tabName);
   if (activeTab) activeTab.style.display = 'block';
@@ -985,11 +996,48 @@ window.switchTab = function (tabName) {
 function initProfilePage() {
   let member = JSON.parse(localStorage.getItem("TheThanhVien"));
   let cust = JSON.parse(localStorage.getItem("KhachHang"));
-  const history = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
-
+  
   if (!cust || !cust.name) {
     cust = { phone: "", name: "", email: "", address: "" };
   }
+
+  const myOrdersTableBody = document.getElementById("my-orders-table-body");
+  if (myOrdersTableBody) {
+    const allOrders = JSON.parse(localStorage.getItem("DonHang")) || [];
+    const myOrders = allOrders.filter(o => o.customerPhone === cust.phone && cust.phone !== "");
+
+    myOrdersTableBody.innerHTML = "";
+    if (myOrders.length === 0) {
+      myOrdersTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-light); padding: 32px 0;">Bạn chưa có đơn hàng nào.</td></tr>`;
+    } else {
+      myOrders.forEach(order => {
+        const tr = document.createElement("tr");
+        
+        let statusBadge = '';
+        const status = order.status || 'Chờ xác nhận';
+        if (status === 'Chờ xác nhận') statusBadge = `<span style="background: #fef08a; color: #854d0e; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${status}</span>`;
+        else if (status === 'Đã xác nhận') statusBadge = `<span style="background: #bbf7d0; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${status}</span>`;
+        else if (status === 'Đã hủy') statusBadge = `<span style="background: #fecaca; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${status}</span>`;
+        else statusBadge = `<span style="background: #e2e8f0; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">${status}</span>`;
+
+        let actionBtn = '';
+        if (status === 'Chờ xác nhận') {
+           actionBtn = `<button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; border-radius: 6px; cursor: pointer; border: none;" onclick="cancelMyOrder('${order.orderId}')">Hủy đơn</button>`;
+        }
+
+        tr.innerHTML = `
+          <td><span style="font-weight: 600; color: var(--primary);">${order.orderId}</span></td>
+          <td>${order.orderDate}</td>
+          <td><span style="color: var(--danger); font-weight: 600;">${order.totalAmount.toLocaleString('vi-VN')}đ</span></td>
+          <td>${statusBadge}</td>
+          <td>${actionBtn}</td>
+        `;
+        myOrdersTableBody.appendChild(tr);
+      });
+    }
+  }
+
+  const history = (JSON.parse(localStorage.getItem("LichSuDiem")) || []).filter(item => item.phone === cust.phone);
   if (!member || !member.cardID) {
     member = { cardID: "TV-NEW", phone: "", point: 0, rank: "Đồng", discountRate: 0.00, isCancelled: true };
   }
@@ -1020,9 +1068,18 @@ function initProfilePage() {
   }
 
   if (cardNum) cardNum.innerText = member.cardID;
-  if (holderName) holderName.innerText = cust.name.toUpperCase();
+  if (holderName) holderName.innerText = (cust.name || "KHÁCH").toUpperCase();
   if (pointsVal) pointsVal.innerText = `${member.point} Điểm`;
   if (tierVal) tierVal.innerText = `${member.rank} MEMBER`;
+
+  const sidebarUsername = document.getElementById("sidebar-username");
+  const sidebarUserRank = document.getElementById("sidebar-userrank");
+  if (sidebarUsername) {
+    sidebarUsername.innerText = (cust && cust.name) ? cust.name : "Khách";
+  }
+  if (sidebarUserRank) {
+    sidebarUserRank.innerText = (member && !member.isCancelled && cust.name) ? `${member.rank} MEMBER` : "Chưa đăng ký";
+  }
 
   const bar = document.getElementById("upgrade-progress-bar");
   const label = document.getElementById("upgrade-progress-label");
@@ -1109,6 +1166,7 @@ function initProfilePage() {
 
     const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
     currentHistory.unshift({
+      phone: cust.phone,
       date: new Date().toISOString().split("T")[0],
       orderId: "VOUCHER",
       points: -cost,
@@ -1134,19 +1192,18 @@ function initProfilePage() {
       cancelBtn.className = "btn btn-blue";
       cancelBtn.onclick = async () => {
         const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
-        const cust = JSON.parse(localStorage.getItem("KhachHang")) || { phone: "" };
+        let cust = JSON.parse(localStorage.getItem("KhachHang"));
+        if (!cust) {
+          cust = { phone: currentMember ? currentMember.phone : "", name: "", address: "" };
+        }
 
         const formData = new URLSearchParams();
-        formData.append("customerPhone", cust.phone || "");
-        formData.append("pointsChange", 0);
-        formData.append("action", "register");
-        formData.append("orderId", "ĐĂNG KÝ");
-        formData.append("type", "cộng");
-        formData.append("reason", "Đăng ký lại thẻ thành viên");
-        formData.append("date", new Date().toISOString().split("T")[0]);
+        formData.append("phone", cust.phone || "");
+        formData.append("name", cust.name || "");
+        formData.append("address", cust.address || "");
 
         try {
-          const res = await fetch(`${API_BASE}/api/member/update-points`, {
+          const res = await fetch(`${API_BASE}/api/member/register`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: formData.toString()
@@ -1164,16 +1221,6 @@ function initProfilePage() {
         currentMember.discountRate = 0.00;
         localStorage.setItem("TheThanhVien", JSON.stringify(currentMember));
 
-        const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
-        currentHistory.unshift({
-          date: new Date().toISOString().split("T")[0],
-          orderId: "ĐĂNG KÝ",
-          points: 0,
-          type: "cộng",
-          reason: "Đăng ký lại thẻ thành viên"
-        });
-        localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
-
         initProfilePage();
         showToast("Đăng ký lại thẻ thành viên thành công! Bạn đang ở hạng thẻ Đồng.");
       };
@@ -1189,9 +1236,10 @@ function initProfilePage() {
         }
         const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
         const cust = JSON.parse(localStorage.getItem("KhachHang")) || { phone: "" };
+        const finalPhone = (currentMember && currentMember.phone) ? currentMember.phone : cust.phone;
 
         const formData = new URLSearchParams();
-        formData.append("customerPhone", cust.phone || "");
+        formData.append("customerPhone", finalPhone || "");
         formData.append("pointsChange", 0);
         formData.append("action", "cancel");
         formData.append("orderId", "HỦY THẺ");
@@ -1217,15 +1265,10 @@ function initProfilePage() {
         currentMember.rank = "Đồng";
         currentMember.discountRate = 0.00;
         localStorage.setItem("TheThanhVien", JSON.stringify(currentMember));
-
-        const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
-        currentHistory.unshift({
-          date: new Date().toISOString().split("T")[0],
-          orderId: "HỦY THẺ",
-          points: 0,
-          type: "trừ",
-          reason: "Hủy thẻ thành viên (Đặt lại điểm về 0)"
-        });
+        localStorage.removeItem("KhachHang");
+        
+        let currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+        currentHistory = currentHistory.filter(h => h.phone !== finalPhone);
         localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
 
         initProfilePage();
@@ -1272,16 +1315,6 @@ function initProfilePage() {
             member.discountRate = 0.00;
             member.phone = cust.phone;
             localStorage.setItem("TheThanhVien", JSON.stringify(member));
-
-            const currentHistory = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
-            currentHistory.unshift({
-              date: new Date().toISOString().split("T")[0],
-              orderId: "ĐĂNG KÝ",
-              points: 0,
-              type: "cộng",
-              reason: "Đăng ký thẻ thành viên"
-            });
-            localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
           }
 
           initProfilePage();
@@ -1303,6 +1336,59 @@ function initProfilePage() {
     window.switchTab('personal-info');
   }
 }
+
+let orderToCancel = null;
+
+window.cancelMyOrder = function(orderId) {
+    orderToCancel = orderId;
+    const modalIdSpan = document.getElementById("cancel-modal-order-id");
+    const reasonInput = document.getElementById("cancel-order-reason");
+    const modal = document.getElementById("cancel-order-modal");
+    
+    if (modalIdSpan) modalIdSpan.textContent = orderId;
+    if (reasonInput) reasonInput.value = "";
+    if (modal) modal.style.display = "flex";
+};
+
+window.closeCancelOrderModal = function() {
+    orderToCancel = null;
+    const modal = document.getElementById("cancel-order-modal");
+    if (modal) modal.style.display = "none";
+};
+
+window.submitCancelOrder = async function() {
+    if (!orderToCancel) return;
+    
+    const reasonInput = document.getElementById("cancel-order-reason");
+    const reason = reasonInput ? reasonInput.value.trim() : "";
+    
+    if (reason === "") {
+        showToast("Bạn phải nhập lý do để hủy đơn hàng.");
+        if (reasonInput) reasonInput.focus();
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/orders`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ orderId: orderToCancel, status: "Đã hủy" }).toString()
+        });
+        if (!res.ok) throw new Error("API lỗi");
+    } catch {
+        const orders = JSON.parse(localStorage.getItem("DonHang") || "[]");
+        const idx = orders.findIndex(o => o.orderId === orderToCancel);
+        if (idx > -1) { 
+            orders[idx].status = "Đã hủy"; 
+            orders[idx].cancelReason = reason;
+            localStorage.setItem("DonHang", JSON.stringify(orders)); 
+        }
+    }
+    
+    closeCancelOrderModal();
+    showToast("Đã hủy đơn hàng thành công!");
+    initProfilePage();
+};
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadImageMap();
