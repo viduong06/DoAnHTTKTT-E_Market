@@ -2516,3 +2516,27 @@ img {
 .admin-order-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .admin-status { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #fef3c7; color: #92400e; font-size: 0.78rem; font-weight: 800; }
 @media (max-width: 900px) { .info-grid, .news-grid, .contact-layout, .admin-layout, .admin-stats { grid-template-columns: 1fr; } .info-card-feature { grid-column: span 1; } .info-hero { margin-top: 120px; } }
+
+/* Sticky Sidebar cho trang danh sách sản phẩm */
+.listing-wrapper {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 90px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 5px;
+}
