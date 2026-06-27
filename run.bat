@@ -75,7 +75,7 @@ echo Cho server khoi dong...
 start /b "" "%JAVA_CMD%" -cp "bin;lib\mssql-jdbc.jar" vn.emarket.App
 timeout /t 3 /nobreak >nul
 start "" "http://localhost:8080/index.html"
-start "" "http://localhost:8080/admin/admin.html"
+start "" "http://localhost:8080/admin.html"
 echo.
 echo Server dang chay. Nhan Ctrl+C de dung.
 pause

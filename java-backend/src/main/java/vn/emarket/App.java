@@ -30,15 +30,12 @@ public class App {
   private static final String DB_USER = env("DB_USER", "sa");
   private static final String DB_PASSWORD = env("DB_PASSWORD", "123456");
   private static Path WEB_ROOT;
-  private static Path ADMIN_ROOT;
 
   public static void main(String[] args) throws Exception {
     // Resolve đường dẫn từ working directory (java-backend/)
     WEB_ROOT = Path.of(env("WEB_ROOT", "../webpttkhttt")).toAbsolutePath().normalize();
-    ADMIN_ROOT = Path.of(env("ADMIN_ROOT", "../admin")).toAbsolutePath().normalize();
 
-    System.out.println("WEB_ROOT   = " + WEB_ROOT);
-    System.out.println("ADMIN_ROOT = " + ADMIN_ROOT);
+    System.out.println("WEB_ROOT = " + WEB_ROOT);
 
     Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
     ensureDatabase();
@@ -130,21 +127,6 @@ public class App {
 
   private static void serveStatic(HttpExchange exchange) throws IOException {
     String rawPath = exchange.getRequestURI().getPath();
-
-    // Route /admin/... → ADMIN_ROOT
-    if (rawPath.startsWith("/admin/") || rawPath.equals("/admin")) {
-      String relative = rawPath.replaceFirst("^/admin/?", "");
-      if (relative.isEmpty())
-        relative = "admin.html";
-      Path target = ADMIN_ROOT.resolve(relative).normalize();
-      System.out.println("[admin] " + rawPath + " -> " + target + " | exists=" + Files.exists(target));
-      if (target.startsWith(ADMIN_ROOT) && Files.exists(target) && !Files.isDirectory(target)) {
-        serveFile(exchange, target);
-      } else {
-        send(exchange, 404, "Admin file not found: " + target, "text/plain; charset=utf-8");
-      }
-      return;
-    }
 
     // Route mặc định → WEB_ROOT
     String relative = rawPath.equals("/") ? "index.html" : rawPath.substring(1);
