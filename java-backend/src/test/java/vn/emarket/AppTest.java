@@ -15,6 +15,8 @@ public class AppTest {
     failures += run("testEscapeJson", AppTest::testEscapeJson);
     failures += run("testContentType", AppTest::testContentType);
     failures += run("testRowToJson", AppTest::testRowToJson);
+    failures += run("testCalculateRemainingStock", AppTest::testCalculateRemainingStock);
+    failures += run("testValidateNameAndPhone", AppTest::testValidateNameAndPhone);
 
     System.out.println();
     if (failures == 0) {
@@ -83,6 +85,26 @@ public class AppTest {
 
     String json = (String) rowToJson.invoke(null, rs);
     assertEquals("{\"id\":123,\"name\":\"Máy giặt\",\"price\":8490000,\"active\":true}", json);
+  }
+
+  private static void testCalculateRemainingStock() throws Exception {
+    Method calculateRemainingStock = App.class.getDeclaredMethod("calculateRemainingStock", int.class, int.class);
+    calculateRemainingStock.setAccessible(true);
+
+    assertEquals(9, (int) calculateRemainingStock.invoke(null, 10, 1));
+    assertEquals(0, (int) calculateRemainingStock.invoke(null, 2, 3));
+  }
+
+  private static void testValidateNameAndPhone() throws Exception {
+    Method isValidName = App.class.getDeclaredMethod("isValidName", String.class);
+    Method isValidPhone = App.class.getDeclaredMethod("isValidPhone", String.class);
+    isValidName.setAccessible(true);
+    isValidPhone.setAccessible(true);
+
+    assertEquals(true, (boolean) isValidName.invoke(null, "Nguyễn Văn A"));
+    assertEquals(false, (boolean) isValidName.invoke(null, "A"));
+    assertEquals(true, (boolean) isValidPhone.invoke(null, "0901234567"));
+    assertEquals(false, (boolean) isValidPhone.invoke(null, "123"));
   }
 
   private static ResultSet createMockResultSet(String[] columns, Object[] values) {
@@ -181,6 +203,12 @@ public class AppTest {
   }
 
   private static void assertEquals(int expected, int actual) {
+    if (expected != actual) {
+      throw new AssertionError("Expected=[" + expected + "] Actual=[" + actual + "]");
+    }
+  }
+
+  private static void assertEquals(boolean expected, boolean actual) {
     if (expected != actual) {
       throw new AssertionError("Expected=[" + expected + "] Actual=[" + actual + "]");
     }

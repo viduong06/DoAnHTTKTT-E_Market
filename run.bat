@@ -61,7 +61,6 @@ echo Compiling Java source code...
 echo ========================================================
 if not exist bin mkdir bin
 "%JAVAC_CMD%" -d bin -cp "lib\mssql-jdbc.jar" src\main\java\vn\emarket\App.java
-
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo Compilation failed! Please check your source code.

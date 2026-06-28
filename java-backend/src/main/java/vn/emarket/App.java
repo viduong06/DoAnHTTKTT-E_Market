@@ -406,6 +406,13 @@ public class App {
           String customerName = data.get("customerName");
           String customerAddress = data.get("customerAddress");
 
+          if (!isValidName(customerName)) {
+            throw new IllegalArgumentException("Tên người nhận không hợp lệ");
+          }
+          if (!isValidPhone(customerPhone)) {
+            throw new IllegalArgumentException("Số điện thoại không hợp lệ");
+          }
+
           // Đảm bảo KhachHang có tồn tại với tên và địa chỉ mới nhất
           if (customerPhone != null && !customerPhone.isBlank()) {
             try (PreparedStatement ps = conn.prepareStatement(
@@ -439,11 +446,16 @@ public class App {
           try (PreparedStatement ps = conn.prepareStatement(
               "INSERT INTO ChiTietDonHang (orderId, productID, quantity, unitPrice) VALUES (?, ?, ?, ?)")) {
             for (int i = 0; i < itemCount; i++) {
+              String productId = data.get("item_" + i + "_id");
+              int quantity = Integer.parseInt(data.get("item_" + i + "_qty"));
+              int unitPrice = Integer.parseInt(data.get("item_" + i + "_price"));
               ps.setString(1, orderId);
-              ps.setString(2, data.get("item_" + i + "_id"));
-              ps.setInt(3, Integer.parseInt(data.get("item_" + i + "_qty")));
-              ps.setInt(4, Integer.parseInt(data.get("item_" + i + "_price")));
+              ps.setString(2, productId);
+              ps.setInt(3, quantity);
+              ps.setInt(4, unitPrice);
               ps.addBatch();
+
+              reduceProductStock(conn, productId, quantity);
             }
             ps.executeBatch();
           }
@@ -474,6 +486,33 @@ public class App {
       ex.printStackTrace();
       send(exchange, 500, "{\"error\":\"" + escapeJson(ex.getMessage()) + "\"}", "application/json; charset=utf-8");
     }
+  }
+
+  private static void reduceProductStock(Connection conn, String productId, int quantity) throws SQLException {
+    if (productId == null || productId.isBlank() || quantity <= 0) {
+      return;
+    }
+
+    int currentStock = 0;
+    try (PreparedStatement ps = conn.prepareStatement("SELECT quantityProduct FROM SanPham WHERE productID = ?")) {
+      ps.setString(1, productId);
+      try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
+          currentStock = rs.getInt("quantityProduct");
+        }
+      }
+    }
+
+    int remainingStock = calculateRemainingStock(currentStock, quantity);
+    try (PreparedStatement ps = conn.prepareStatement("UPDATE SanPham SET quantityProduct = ? WHERE productID = ?")) {
+      ps.setInt(1, remainingStock);
+      ps.setString(2, productId);
+      ps.executeUpdate();
+    }
+  }
+
+  private static int calculateRemainingStock(int currentStock, int purchasedQuantity) {
+    return Math.max(0, currentStock - purchasedQuantity);
   }
 
   private static void handleUpdatePoints(HttpExchange exchange) throws IOException {
@@ -626,6 +665,14 @@ public class App {
         send(exchange, 400, "{\"error\":\"Missing phone\"}", "application/json; charset=utf-8");
         return;
       }
+      if (!isValidName(name)) {
+        send(exchange, 400, "{\"error\":\"Tên không hợp lệ\"}", "application/json; charset=utf-8");
+        return;
+      }
+      if (!isValidPhone(phone)) {
+        send(exchange, 400, "{\"error\":\"Số điện thoại không hợp lệ\"}", "application/json; charset=utf-8");
+        return;
+      }
 
       try (Connection conn = getConnection()) {
         conn.setAutoCommit(false);
@@ -666,6 +713,25 @@ public class App {
       ex.printStackTrace();
       send(exchange, 500, "{\"error\":\"" + escapeJson(ex.getMessage()) + "\"}", "application/json; charset=utf-8");
     }
+  }
+
+  private static boolean isValidName(String name) {
+    if (name == null) {
+      return false;
+    }
+    String trimmed = name.trim();
+    if (trimmed.isEmpty() || trimmed.length() < 2) {
+      return false;
+    }
+    return trimmed.matches("[\\p{L}\\s]+") && trimmed.split("\\s+").length >= 2;
+  }
+
+  private static boolean isValidPhone(String phone) {
+    if (phone == null) {
+      return false;
+    }
+    String trimmed = phone.trim();
+    return trimmed.matches("0\\d{9}") || trimmed.matches("\\+84\\d{9}");
   }
 
   private static String contentType(Path path) {

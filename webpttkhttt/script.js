@@ -91,6 +91,33 @@ function getProducts() {
   return JSON.parse(localStorage.getItem("SanPham") || "[]");
 }
 
+function saveProducts(products) {
+  localStorage.setItem("SanPham", JSON.stringify(products || []));
+}
+
+async function refreshProductsFromServer() {
+  try {
+    const res = await fetch(`${API_BASE}/api/products`);
+    if (!res.ok) {
+      throw new Error(`API returned ${res.status}`);
+    }
+    const products = await res.json();
+    saveProducts(products);
+    return getProducts();
+  } catch (err) {
+    console.error("Không thể đồng bộ sản phẩm từ backend.", err);
+    return getProducts();
+  }
+}
+
+function renderStockInfo(product) {
+  const remaining = Number(product?.quantityProduct || 0);
+  if (remaining > 0) {
+    return `<div style="margin-top: 8px; font-size: 0.82rem; font-weight: 600; color: var(--success);">Còn lại: ${remaining} chiếc</div>`;
+  }
+  return `<div style="margin-top: 8px; font-size: 0.82rem; font-weight: 600; color: var(--danger);">Đã hết hàng</div>`;
+}
+
 function getCategories() {
   return JSON.parse(localStorage.getItem("DanhMuc") || "[]");
 }
@@ -176,6 +203,16 @@ function addToCart(productId, quantity = 1) {
   showToast("Đã thêm vào giỏ hàng!");
 }
 
+function isValidName(name) {
+  const trimmed = (name || "").trim();
+  return trimmed.length >= 2 && /^[\p{L}\s]+$/u.test(trimmed) && trimmed.split(/\s+/).length >= 2;
+}
+
+function isValidPhone(phone) {
+  const trimmed = (phone || "").trim();
+  return /^0\d{9}$/.test(trimmed) || /^\+84\d{9}$/.test(trimmed);
+}
+
 function formatPrice(number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(number);
 }
@@ -230,6 +267,7 @@ function renderFlashSale() {
             <span class="product-price-sale">${formatPrice(p.priceProduct)}</span>
             <span class="product-price-original">${formatPrice(p.originalPrice)}</span>
           </div>
+          ${renderStockInfo(p)}
           <div class="product-sold-progress">
             <div class="product-sold-bar" style="width: ${percent}%"></div>
             <span class="product-sold-text">Đã bán ${p.soldFlash}/${p.limitFlash}</span>
@@ -271,6 +309,7 @@ function renderSuggestedProducts() {
             <span class="product-price-sale">${formatPrice(p.priceProduct)}</span>
             <span class="product-price-original">${formatPrice(p.originalPrice)}</span>
           </div>
+          ${renderStockInfo(p)}
           <div class="product-delivery-tag">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
             Miễn phí vận chuyển
@@ -391,6 +430,7 @@ function renderListingGrid(products) {
             <span class="product-price-sale">${formatPrice(p.priceProduct)}</span>
             <span class="product-price-original">${formatPrice(p.originalPrice)}</span>
           </div>
+          ${renderStockInfo(p)}
           <div class="product-delivery-tag">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
             Giao siêu tốc
@@ -578,6 +618,7 @@ function initDetailPage() {
             <div class="product-price-wrapper">
               <span class="product-price-sale">${formatPrice(item.priceProduct)}</span>
             </div>
+            ${renderStockInfo(item)}
             <button class="product-btn-add" onclick="addToCart('${item.productID}')">Thêm vào giỏ</button>
           </div>
         </div>
@@ -854,6 +895,14 @@ function initCheckoutPage() {
         showToast("Vui lòng điền đầy đủ địa chỉ nhận hàng!");
         return;
       }
+      if (!isValidName(fullName)) {
+        showToast("Tên người nhận phải có ít nhất 2 từ và chỉ chứa chữ cái.");
+        return;
+      }
+      if (!isValidPhone(phone)) {
+        showToast("Số điện thoại không hợp lệ. Vui lòng nhập 10 số bắt đầu bằng 0.");
+        return;
+      }
 
       const activeShipCard = document.querySelector(".shipping-card.active");
       const shipMethod = activeShipCard ? activeShipCard.querySelector(".shipping-name").innerText : "Giao hàng tiêu chuẩn";
@@ -887,15 +936,31 @@ function initCheckoutPage() {
         formData.append(`item_${index}_price`, prod ? prod.priceProduct : 0);
       });
 
+      let checkoutSucceeded = false;
       try {
         const res = await fetch(`${API_BASE}/api/checkout`, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: formData.toString()
         });
-        if (!res.ok) console.error("Checkout failed on backend");
+        if (!res.ok) {
+          throw new Error(`Checkout failed with status ${res.status}`);
+        }
+        checkoutSucceeded = true;
       } catch (err) {
         console.error("Backend checkout request failed:", err);
+      }
+
+      if (checkoutSucceeded) {
+        await refreshProductsFromServer();
+        if (window.location.pathname.includes("product-list.html")) {
+          initListingPage();
+        } else if (window.location.pathname.includes("product-detail.html")) {
+          initDetailPage();
+        } else {
+          renderFlashSale();
+          renderSuggestedProducts();
+        }
       }
 
       const donHang = JSON.parse(localStorage.getItem("DonHang")) || [];
@@ -957,7 +1022,9 @@ function initCheckoutPage() {
       });
       localStorage.setItem("LichSuDiem", JSON.stringify(history));
 
-      localStorage.setItem("ChiTietGioHang", JSON.stringify([]));
+      if (checkoutSucceeded) {
+        localStorage.setItem("ChiTietGioHang", JSON.stringify([]));
+      }
       sessionStorage.removeItem("activeCoupon");
       sessionStorage.removeItem("shippingFee");
 
@@ -1266,9 +1333,22 @@ function initProfilePage() {
     formPersonalInfo.onsubmit = async (e) => {
       e.preventDefault();
 
-      cust.name = piName.value.trim();
-      cust.phone = piPhone.value.trim();
-      cust.address = piAddress.value.trim();
+      const nameValue = piName.value.trim();
+      const phoneValue = piPhone.value.trim();
+      const addressValue = piAddress.value.trim();
+
+      if (!isValidName(nameValue)) {
+        showToast("Tên thành viên phải có ít nhất 2 từ và chỉ chứa chữ cái.");
+        return;
+      }
+      if (!isValidPhone(phoneValue)) {
+        showToast("Số điện thoại không hợp lệ. Vui lòng nhập 10 số bắt đầu bằng 0.");
+        return;
+      }
+
+      cust.name = nameValue;
+      cust.phone = phoneValue;
+      cust.address = addressValue;
       const formData = new URLSearchParams();
       formData.append("name", cust.name);
       formData.append("phone", cust.phone);
