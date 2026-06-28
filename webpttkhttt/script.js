@@ -1431,13 +1431,46 @@ window.submitCancelOrder = async function() {
             body: new URLSearchParams({ orderId: orderToCancel, status: "Đã hủy" }).toString()
         });
         if (!res.ok) throw new Error("API lỗi");
-    } catch {
-        const orders = JSON.parse(localStorage.getItem("DonHang") || "[]");
-        const idx = orders.findIndex(o => o.orderId === orderToCancel);
-        if (idx > -1) { 
-            orders[idx].status = "Đã hủy"; 
-            orders[idx].cancelReason = reason;
-            localStorage.setItem("DonHang", JSON.stringify(orders)); 
+    } catch (e) {
+        console.error(e);
+    }
+    
+    const orders = JSON.parse(localStorage.getItem("DonHang") || "[]");
+    const idx = orders.findIndex(o => o.orderId === orderToCancel);
+    if (idx > -1) { 
+        orders[idx].status = "Đã hủy"; 
+        orders[idx].cancelReason = reason;
+        localStorage.setItem("DonHang", JSON.stringify(orders)); 
+        
+        // Revert points in localStorage
+        const history = JSON.parse(localStorage.getItem("LichSuDiem")) || [];
+        const pointEntry = history.find(h => h.orderId === orderToCancel && h.type === "cộng");
+        if (pointEntry && pointEntry.points > 0) {
+            const member = JSON.parse(localStorage.getItem("TheThanhVien"));
+            if (member) {
+                member.point -= pointEntry.points;
+                if (member.point < 0) member.point = 0;
+                if (member.point >= 2000) {
+                    member.rank = "Vàng";
+                    member.discountRate = 0.10;
+                } else if (member.point >= 1000) {
+                    member.rank = "Bạc";
+                    member.discountRate = 0.05;
+                } else {
+                    member.rank = "Đồng";
+                    member.discountRate = 0.00;
+                }
+                localStorage.setItem("TheThanhVien", JSON.stringify(member));
+            }
+            history.unshift({
+                phone: pointEntry.phone,
+                date: new Date().toISOString().split("T")[0],
+                orderId: orderToCancel,
+                points: pointEntry.points,
+                type: "trừ",
+                reason: "Hủy đơn hàng " + orderToCancel
+            });
+            localStorage.setItem("LichSuDiem", JSON.stringify(history));
         }
     }
     

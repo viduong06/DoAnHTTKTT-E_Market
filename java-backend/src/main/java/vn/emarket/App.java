@@ -47,6 +47,7 @@ public class App {
     server.createContext("/api/products", exchange -> handleJson(exchange, () -> tableJson("SanPham")));
     server.createContext("/api/categories", exchange -> handleJson(exchange, () -> tableJson("DanhMuc")));
     server.createContext("/api/checkout", App::handleCheckout);
+    server.createContext("/api/orders", App::handleOrders);
     server.createContext("/api/member/update-points", App::handleUpdatePoints);
     server.createContext("/api/member/register", App::handleRegisterMember);
     server.createContext("/", App::serveStatic);
@@ -184,7 +185,9 @@ public class App {
         "IF NOT EXISTS(SELECT * FROM sys.columns WHERE Name = N'phone' AND Object_ID = Object_ID(N'LichSuDiem')) ALTER TABLE LichSuDiem ADD phone VARCHAR(50)",
         "IF OBJECT_ID('SanPham', 'U') IS NULL CREATE TABLE SanPham (productID VARCHAR(30) PRIMARY KEY, productName NVARCHAR(255) NOT NULL, categoryID VARCHAR(20), brand NVARCHAR(100), priceProduct INT NOT NULL, originalPrice INT NOT NULL, quantityProduct INT DEFAULT 0, capacity NVARCHAR(100), energySaving NVARCHAR(50), smartFeature NVARCHAR(50), descriptionProduct NVARCHAR(MAX), rating DECIMAL(3,1), reviewsCount INT DEFAULT 0, soldCount INT DEFAULT 0, isFlashSale BIT DEFAULT 0, soldFlash INT DEFAULT 0, limitFlash INT DEFAULT 0, FOREIGN KEY (categoryID) REFERENCES DanhMuc(categoryID))",
         "IF OBJECT_ID('DonHang', 'U') IS NULL CREATE TABLE DonHang (orderId VARCHAR(30) PRIMARY KEY, orderDate VARCHAR(50), totalAmount INT, shippingAddress NVARCHAR(MAX), status NVARCHAR(50), paymentMethod NVARCHAR(100), customerPhone VARCHAR(50), staffId VARCHAR(20), FOREIGN KEY (customerPhone) REFERENCES KhachHang(phone), FOREIGN KEY (staffId) REFERENCES NhanVien(staffId))",
-        "IF OBJECT_ID('ChiTietDonHang', 'U') IS NULL CREATE TABLE ChiTietDonHang (orderId VARCHAR(30), productID VARCHAR(30), quantity INT, unitPrice INT, PRIMARY KEY (orderId, productID), FOREIGN KEY (orderId) REFERENCES DonHang(orderId), FOREIGN KEY (productID) REFERENCES SanPham(productID))");
+        "IF OBJECT_ID('ChiTietDonHang', 'U') IS NULL CREATE TABLE ChiTietDonHang (orderId VARCHAR(30), productID VARCHAR(30), quantity INT, unitPrice INT, PRIMARY KEY (orderId, productID), FOREIGN KEY (orderId) REFERENCES DonHang(orderId), FOREIGN KEY (productID) REFERENCES SanPham(productID))",
+        "UPDATE LichSuDiem SET orderId = NULL WHERE orderId IS NOT NULL AND orderId NOT IN (SELECT orderId FROM DonHang)",
+        "IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_LichSuDiem_DonHang') ALTER TABLE LichSuDiem ADD CONSTRAINT FK_LichSuDiem_DonHang FOREIGN KEY (orderId) REFERENCES DonHang(orderId)");
   }
 
   private static void seedCategories(Connection conn) throws SQLException {
@@ -331,7 +334,7 @@ public class App {
         try (Connection conn = getConnection();
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(
-                "SELECT orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerID " +
+                "SELECT orderId, orderDate, totalAmount, shippingAddress, status, paymentMethod, customerPhone " +
                     "FROM DonHang ORDER BY orderDate DESC")) {
           int row = 0;
           while (rs.next()) {
@@ -362,13 +365,34 @@ public class App {
           return;
         }
 
-        try (Connection conn = getConnection();
-            PreparedStatement ps = conn.prepareStatement(
-                "UPDATE DonHang SET status = ? WHERE orderId = ?")) {
-          ps.setString(1, status);
-          ps.setString(2, orderId);
-          int rows = ps.executeUpdate();
-          send(exchange, 200, "{\"success\":true,\"updated\":" + rows + "}", "application/json; charset=utf-8");
+        try (Connection conn = getConnection()) {
+          conn.setAutoCommit(false);
+          try (PreparedStatement ps = conn.prepareStatement("UPDATE DonHang SET status = ? WHERE orderId = ?")) {
+            ps.setString(1, status);
+            ps.setString(2, orderId);
+            int rows = ps.executeUpdate();
+            
+            if (rows > 0 && "Đã hủy".equals(status)) {
+              try (PreparedStatement psPoints = conn.prepareStatement("SELECT phone, points FROM LichSuDiem WHERE orderId = ? AND type = N'cộng'")) {
+                psPoints.setString(1, orderId);
+                try (ResultSet rs = psPoints.executeQuery()) {
+                  if (rs.next()) {
+                    String phone = rs.getString("phone");
+                    int pointsAdded = rs.getInt("points");
+                    if (pointsAdded > 0) {
+                      String dateOnly = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date());
+                      updateMemberPointsAndHistory(conn, phone, -pointsAdded, "cancelOrder", orderId, "trừ", "Hủy đơn hàng " + orderId, dateOnly);
+                    }
+                  }
+                }
+              }
+            }
+            conn.commit();
+            send(exchange, 200, "{\"success\":true,\"updated\":" + rows + "}", "application/json; charset=utf-8");
+          } catch (SQLException e) {
+            conn.rollback();
+            throw e;
+          }
         }
       } catch (Exception ex) {
         ex.printStackTrace();
@@ -596,32 +620,19 @@ public class App {
       if (newPoints < 0)
         newPoints = 0;
 
-      if (pointsChange > 0) {
-        int targetVal = 1;
-        String targetRank = "Đồng";
-        double targetRate = 0.00;
+      String targetRank = "Đồng";
+      double targetRate = 0.00;
 
-        if (newPoints >= 2000) {
-          targetVal = 3;
-          targetRank = "Vàng";
-          targetRate = 0.10;
-        } else if (newPoints >= 1000) {
-          targetVal = 2;
-          targetRank = "Bạc";
-          targetRate = 0.05;
-        }
-
-        int currentVal = 1;
-        if ("Vàng".equals(currentRank))
-          currentVal = 3;
-        else if ("Bạc".equals(currentRank))
-          currentVal = 2;
-
-        if (targetVal > currentVal) {
-          newRank = targetRank;
-          newDiscountRate = targetRate;
-        }
+      if (newPoints >= 2000) {
+        targetRank = "Vàng";
+        targetRate = 0.10;
+      } else if (newPoints >= 1000) {
+        targetRank = "Bạc";
+        targetRate = 0.05;
       }
+
+      newRank = targetRank;
+      newDiscountRate = targetRate;
     }
 
     try (PreparedStatement ps = conn
@@ -634,12 +645,19 @@ public class App {
     }
 
     if (!"register".equals(action)) {
+      if ("VOUCHER".equalsIgnoreCase(orderId) || "HỦY THẺ".equalsIgnoreCase(orderId) || "ĐĂNG KÝ".equalsIgnoreCase(orderId) || (orderId != null && orderId.trim().isEmpty())) {
+        orderId = null;
+      }
       try (PreparedStatement ps = conn
           .prepareStatement(
               "INSERT INTO LichSuDiem (phone, date, orderId, points, type, reason) VALUES (?, ?, ?, ?, ?, ?)")) {
         ps.setString(1, customerPhone);
         ps.setString(2, date);
-        ps.setString(3, orderId);
+        if (orderId == null) {
+          ps.setNull(3, java.sql.Types.VARCHAR);
+        } else {
+          ps.setString(3, orderId);
+        }
         ps.setInt(4, pointsChange);
         ps.setString(5, type);
         ps.setString(6, reason);
