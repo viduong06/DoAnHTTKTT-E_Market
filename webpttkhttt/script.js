@@ -977,6 +977,12 @@ function initCheckoutPage() {
 
 
 window.switchTab = function (tabName) {
+  let member = JSON.parse(localStorage.getItem("TheThanhVien"));
+  let actualTabToRender = tabName;
+  if (tabName === 'member-card' && (!member || member.isCancelled)) {
+    actualTabToRender = 'personal-info';
+  }
+
   document.querySelectorAll('.profile-nav-item').forEach(el => el.classList.remove('active'));
   const activeNav = document.getElementById('nav-' + tabName);
   if (activeNav) activeNav.classList.add('active');
@@ -989,7 +995,7 @@ window.switchTab = function (tabName) {
   if (tabPersonalInfo) tabPersonalInfo.style.display = 'none';
   if (tabMyOrders) tabMyOrders.style.display = 'none';
 
-  const activeTab = document.getElementById('tab-' + tabName);
+  const activeTab = document.getElementById('tab-' + actualTabToRender);
   if (activeTab) activeTab.style.display = 'block';
 };
 
@@ -1190,39 +1196,9 @@ function initProfilePage() {
       cancelDesc.innerText = "Đăng ký lại thẻ thành viên để nhận đặc quyền tích điểm thưởng và nâng hạng thẻ.";
       cancelBtn.innerText = "Đăng Ký Lại";
       cancelBtn.className = "btn btn-blue";
-      cancelBtn.onclick = async () => {
-        const currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
-        let cust = JSON.parse(localStorage.getItem("KhachHang"));
-        if (!cust) {
-          cust = { phone: currentMember ? currentMember.phone : "", name: "", address: "" };
-        }
-
-        const formData = new URLSearchParams();
-        formData.append("phone", cust.phone || "");
-        formData.append("name", cust.name || "");
-        formData.append("address", cust.address || "");
-
-        try {
-          const res = await fetch(`${API_BASE}/api/member/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: formData.toString()
-          });
-          if (!res.ok) {
-            console.error("Backend member registration failed");
-          }
-        } catch (err) {
-          console.error("Backend member registration request failed:", err);
-        }
-
-        currentMember.isCancelled = false;
-        currentMember.point = 0;
-        currentMember.rank = "Đồng";
-        currentMember.discountRate = 0.00;
-        localStorage.setItem("TheThanhVien", JSON.stringify(currentMember));
-
-        initProfilePage();
-        showToast("Đăng ký lại thẻ thành viên thành công! Bạn đang ở hạng thẻ Đồng.");
+      cancelBtn.onclick = () => {
+        window.switchTab('personal-info');
+        showToast("Vui lòng điền thông tin để đăng ký lại thẻ thành viên.");
       };
     } else {
       cancelTitle.innerText = "Hủy Tư Cách Thành Viên";
@@ -1333,7 +1309,7 @@ function initProfilePage() {
 
   // Auto switch to personal info if member is not registered
   if (member && member.isCancelled) {
-    window.switchTab('personal-info');
+    window.switchTab('member-card');
   }
 }
 
