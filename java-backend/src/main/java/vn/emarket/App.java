@@ -373,6 +373,7 @@ public class App {
             int rows = ps.executeUpdate();
             
             if (rows > 0 && "Đã hủy".equals(status)) {
+              // 1. Hoàn tác điểm thưởng
               try (PreparedStatement psPoints = conn.prepareStatement("SELECT phone, points FROM LichSuDiem WHERE orderId = ? AND type = N'cộng'")) {
                 psPoints.setString(1, orderId);
                 try (ResultSet rs = psPoints.executeQuery()) {
@@ -383,6 +384,18 @@ public class App {
                       String dateOnly = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date());
                       updateMemberPointsAndHistory(conn, phone, -pointsAdded, "cancelOrder", orderId, "trừ", "Hủy đơn hàng " + orderId, dateOnly);
                     }
+                  }
+                }
+              }
+
+              // 2. Khôi phục hàng tồn kho
+              try (PreparedStatement psItems = conn.prepareStatement("SELECT productID, quantity FROM ChiTietDonHang WHERE orderId = ?")) {
+                psItems.setString(1, orderId);
+                try (ResultSet rsItems = psItems.executeQuery()) {
+                  while (rsItems.next()) {
+                    String productId = rsItems.getString("productID");
+                    int quantityPurchased = rsItems.getInt("quantity");
+                    restoreProductStock(conn, productId, quantityPurchased);
                   }
                 }
               }
@@ -530,6 +543,28 @@ public class App {
     int remainingStock = calculateRemainingStock(currentStock, quantity);
     try (PreparedStatement ps = conn.prepareStatement("UPDATE SanPham SET quantityProduct = ? WHERE productID = ?")) {
       ps.setInt(1, remainingStock);
+      ps.setString(2, productId);
+      ps.executeUpdate();
+    }
+  }
+
+  private static void restoreProductStock(Connection conn, String productId, int quantity) throws SQLException {
+    if (productId == null || productId.isBlank() || quantity <= 0) {
+      return;
+    }
+
+    int currentStock = 0;
+    try (PreparedStatement ps = conn.prepareStatement("SELECT quantityProduct FROM SanPham WHERE productID = ?")) {
+      ps.setString(1, productId);
+      try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
+          currentStock = rs.getInt("quantityProduct");
+        }
+      }
+    }
+
+    try (PreparedStatement ps = conn.prepareStatement("UPDATE SanPham SET quantityProduct = ? WHERE productID = ?")) {
+      ps.setInt(1, currentStock + quantity);
       ps.setString(2, productId);
       ps.executeUpdate();
     }

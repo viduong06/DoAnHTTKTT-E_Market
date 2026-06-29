@@ -70,11 +70,11 @@ async function initDatabase() {
     }
   }
 
-  if (!localStorage.getItem("GioHang")) {
-    localStorage.setItem("GioHang", JSON.stringify({ cartID: 1, totalAmount: 0 }));
+  if (!sessionStorage.getItem("GioHang")) {
+    sessionStorage.setItem("GioHang", JSON.stringify({ cartID: 1, totalAmount: 0 }));
   }
-  if (!localStorage.getItem("ChiTietGioHang")) {
-    localStorage.setItem("ChiTietGioHang", JSON.stringify([]));
+  if (!sessionStorage.getItem("ChiTietGioHang")) {
+    sessionStorage.setItem("ChiTietGioHang", JSON.stringify([]));
   }
   if (!localStorage.getItem("DonHang")) {
     localStorage.setItem("DonHang", JSON.stringify([]));
@@ -123,11 +123,19 @@ function getCategories() {
 }
 
 function getCartItems() {
-  return JSON.parse(localStorage.getItem("ChiTietGioHang") || "[]");
+  const stored = sessionStorage.getItem("ChiTietGioHang");
+  if (stored !== null) {
+    return JSON.parse(stored || "[]");
+  }
+  const legacy = localStorage.getItem("ChiTietGioHang");
+  if (legacy) {
+    sessionStorage.setItem("ChiTietGioHang", legacy);
+  }
+  return JSON.parse(legacy || "[]");
 }
 
 function saveCartItems(items) {
-  localStorage.setItem("ChiTietGioHang", JSON.stringify(items));
+  sessionStorage.setItem("ChiTietGioHang", JSON.stringify(items));
   updateCartBadge();
   recalculateCartTotal();
 }
@@ -144,18 +152,16 @@ function updateCartBadge() {
 function recalculateCartTotal() {
   const items = getCartItems();
   const subtotal = items.reduce((sum, item) => sum + (item.subTotal || 0), 0);
-  const gioHang = JSON.parse(localStorage.getItem("GioHang")) || { cartID: 1 };
+  const gioHang = JSON.parse(sessionStorage.getItem("GioHang") || localStorage.getItem("GioHang") || "{}") || { cartID: 1 };
 
-  let discount = 0;
-  if (sessionStorage.getItem("activeCoupon") === "GIAM50") {
-    discount = 50000;
-  }
+  const activeCoupon = sessionStorage.getItem("activeCoupon");
+  const discount = getCouponDiscountAmount(activeCoupon);
 
   const shipping = parseInt(sessionStorage.getItem("shippingFee") || "0");
   const finalTotal = Math.max(0, subtotal - discount + shipping);
 
   gioHang.totalAmount = finalTotal;
-  localStorage.setItem("GioHang", JSON.stringify(gioHang));
+  sessionStorage.setItem("GioHang", JSON.stringify(gioHang));
 }
 
 function showToast(message) {
@@ -215,6 +221,34 @@ function isValidPhone(phone) {
 
 function formatPrice(number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(number);
+}
+
+function getRedeemedCoupons() {
+  try {
+    const redeemed = JSON.parse(localStorage.getItem("RedeemedVouchers") || "[]");
+    return Array.isArray(redeemed) ? redeemed : [];
+  } catch (error) {
+    console.warn("Không đọc được danh sách voucher đã đổi:", error);
+    return [];
+  }
+}
+
+function saveRedeemedCoupons(coupons) {
+  localStorage.setItem("RedeemedVouchers", JSON.stringify(coupons));
+}
+
+function isCouponRedeemed(code) {
+  const normalizedCode = (code || "").toUpperCase();
+  return getRedeemedCoupons().some(item => (item || "").toUpperCase() === normalizedCode);
+}
+
+function getCouponDiscountAmount(code) {
+  switch ((code || "").toUpperCase()) {
+    case "GIAM50": return 50000;
+    case "GIAM100": return 100000;
+    case "GIAM250": return 250000;
+    default: return 0;
+  }
 }
 
 function initCountdown() {
@@ -736,10 +770,8 @@ function updateCartSummaryDOM(subtotal) {
 
   subtotalEl.innerText = formatPrice(subtotal);
 
-  let discount = 0;
-  if (sessionStorage.getItem("activeCoupon") === "GIAM50" && subtotal > 0) {
-    discount = 50000;
-  }
+  const activeCoupon = sessionStorage.getItem("activeCoupon");
+  let discount = subtotal > 0 ? getCouponDiscountAmount(activeCoupon) : 0;
   discountEl.innerText = discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0);
 
   const shipping = subtotal > 0 ? 30000 : 0;
@@ -757,12 +789,14 @@ function applyCoupon() {
   if (!input) return;
 
   const code = input.value.trim().toUpperCase();
-  if (code === "GIAM50") {
-    sessionStorage.setItem("activeCoupon", "GIAM50");
-    showToast("Áp dụng mã giảm giá thành công! Giảm 50.000đ");
+  const discount = getCouponDiscountAmount(code);
+  if (discount > 0 && isCouponRedeemed(code)) {
+    sessionStorage.setItem("activeCoupon", code);
+    showToast(`Áp dụng mã giảm giá thành công! Giảm ${formatPrice(discount)}`);
     renderCartList();
   } else {
-    showToast("Mã giảm giá không hợp lệ hoặc đã hết hạn!");
+    sessionStorage.removeItem("activeCoupon");
+    showToast("Mã giảm giá chưa được đổi từ thẻ thành viên hoặc không hợp lệ!");
   }
 }
 
@@ -834,10 +868,8 @@ function initCheckoutPage() {
 
   subtotalEl.innerText = formatPrice(subtotal);
 
-  let discount = 0;
-  if (sessionStorage.getItem("activeCoupon") === "GIAM50") {
-    discount = 50000;
-  }
+  const activeCoupon = sessionStorage.getItem("activeCoupon");
+  let discount = getCouponDiscountAmount(activeCoupon);
   discountEl.innerText = discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0);
 
   let shipFee = parseInt(sessionStorage.getItem("shippingFee") || "30000");
@@ -1023,7 +1055,7 @@ function initCheckoutPage() {
       localStorage.setItem("LichSuDiem", JSON.stringify(history));
 
       if (checkoutSucceeded) {
-        localStorage.setItem("ChiTietGioHang", JSON.stringify([]));
+        sessionStorage.setItem("ChiTietGioHang", JSON.stringify([]));
       }
       sessionStorage.removeItem("activeCoupon");
       sessionStorage.removeItem("shippingFee");
@@ -1200,7 +1232,7 @@ function initProfilePage() {
     `).join("");
   }
 
-  window.redeemVoucher = async (cost, voucherName) => {
+  window.redeemVoucher = async (cost, voucherName, voucherCode) => {
     let currentMember = JSON.parse(localStorage.getItem("TheThanhVien"));
     if (currentMember.isCancelled) {
       showToast("Thẻ thành viên của bạn đã bị hủy. Vui lòng đăng ký lại thẻ để đổi voucher!");
@@ -1248,8 +1280,16 @@ function initProfilePage() {
     });
     localStorage.setItem("LichSuDiem", JSON.stringify(currentHistory));
 
+    const resolvedCode = (voucherCode || "GIAM50").toUpperCase();
+    const redeemedCoupons = getRedeemedCoupons();
+    if (!redeemedCoupons.includes(resolvedCode)) {
+      redeemedCoupons.push(resolvedCode);
+      saveRedeemedCoupons(redeemedCoupons);
+    }
+    sessionStorage.setItem("activeCoupon", resolvedCode);
+
     initProfilePage();
-    showToast(`Đổi mã giảm giá thành công! Voucher: GIAM50`);
+    showToast(`Đổi mã giảm giá thành công! Voucher: ${resolvedCode}`);
   };
 
   const cancelBtn = document.getElementById("btn-cancel-membership");
