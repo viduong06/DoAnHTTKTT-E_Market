@@ -113,13 +113,26 @@ Thư mục `java-backend/lib/` cần phải chứa tệp tin thư viện kết n
 
 ## 6\. Cấu hình Database
 
-Dự án sử dụng cơ chế **Auto-DDL và Auto-Seeding**. Khi bạn khởi chạy ứng dụng lần đầu tiên, Backend Java sẽ tự động thực hiện các tác vụ sau:
+Dự án hỗ trợ 2 cách cấu hình Cơ sở dữ liệu:
+
+### Cách 1: Sử dụng cơ chế Auto-DDL và Auto-Seeding (Mặc định - Khuyên dùng)
+
+Khi bạn khởi chạy ứng dụng lần đầu tiên, Backend Java sẽ tự động thực hiện các tác vụ sau:
 
 1. Kết nối với SQL Server master để kiểm tra và tự động khởi tạo cơ sở dữ liệu tên là `Emarket` nếu chưa tồn tại.
 2. Tự động tạo toàn bộ cấu trúc bảng cần thiết (`DanhMuc`, `NhanVien`, `KhachHang`, `TheThanhVien`, `LichSuDiem`, `SanPham`, `DonHang`, `ChiTietDonHang`).
 3. Tự động chèn dữ liệu mẫu ban đầu (Seeding) bao gồm danh mục sản phẩm, nhân viên quản trị và các sản phẩm điện máy thuộc các thương hiệu Samsung, LG, Panasonic, Sony, Daikin, Xiaomi,...
 
 Do đó, bạn **không cần chạy bất kỳ file SQL script thủ công nào bằng tay**.
+
+### Cách 2: Khởi tạo thủ công bằng file SQL (Dành cho việc kiểm thử/backup)
+
+Nếu bạn muốn tự tay khởi tạo cơ sở dữ liệu hoặc import cấu trúc dữ liệu bằng công cụ quản trị (SSMS):
+
+1. File SQL script nằm tại: `database/DatabaseEmarket.sql`.
+2. Mở **SQL Server Management Studio (SSMS)**.
+3. Kéo thả file `DatabaseEmarket.sql` vào SSMS.
+4. Nhấn **Execute** (hoặc phím `F5`) để thực thi toàn bộ kịch bản tạo database và nhập dữ liệu mẫu.
 
 ### Tham số kết nối mặc định (trong file `App.java`):
 
@@ -174,6 +187,9 @@ Dưới đây là sơ đồ cấu trúc các thư mục và tệp tin chính c�
 
 ```text
 DoAnHTTKTT-E\_Market/
+│
+├── database/                       # Thư mục chứa mã nguồn cơ sở dữ liệu
+│   └── DatabaseEmarket.sql         # Script SQL tạo cấu trúc bảng và dữ liệu mẫu
 │
 ├── java-backend/                   # Máy chủ Backend viết bằng Java
 │   ├── bin/                        # Thư mục chứa các file .class sau khi biên dịch
